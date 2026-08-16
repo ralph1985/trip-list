@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" class="wa-theme-default">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -18,7 +18,9 @@
           <h1>Antes de salir</h1>
           <p class="intro">Tu lista de viaje, sin ruido y siempre a mano.</p>
         </div>
-        <button class="icon-button" id="reset-button" type="button" title="Desmarcar toda la lista" aria-label="Desmarcar toda la lista">↺</button>
+        <wa-button id="reset-button" appearance="plain" circle size="m" title="Desmarcar toda la lista" aria-label="Desmarcar toda la lista">
+          <wa-icon name="rotate-left" label="Desmarcar toda la lista"></wa-icon>
+        </wa-button>
       </header>
 
       <section class="summary" aria-label="Progreso">
@@ -26,11 +28,13 @@
           <span id="progress-label">0 de 0 listos</span>
           <span id="progress-percent">0%</span>
         </div>
-        <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
-        <button class="filter-button" id="completed-toggle" type="button" aria-pressed="false">Ocultar completados</button>
+        <wa-progress-bar id="progress-bar" value="0" label="Progreso de la lista"></wa-progress-bar>
+        <wa-button id="completed-toggle" appearance="plain" variant="brand" size="s" aria-pressed="false">Ocultar completados</wa-button>
       </section>
 
-      <nav class="section-nav" id="section-nav" aria-label="Secciones de la lista"></nav>
+      <div class="section-picker">
+        <wa-select id="section-select" label="Categoría" size="s" hoist></wa-select>
+      </div>
 
       <section class="list-area">
         <div class="list-heading">
@@ -38,7 +42,7 @@
             <p class="section-kicker">Sección actual</p>
             <h2 id="section-title">Otros</h2>
           </div>
-          <button class="text-button" id="section-toggle" type="button">Marcar todo</button>
+          <wa-button id="section-toggle" appearance="plain" variant="brand" size="s">Marcar todo</wa-button>
         </div>
         <ul class="checklist" id="checklist"></ul>
       </section>

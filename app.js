@@ -1,4 +1,21 @@
+import "@awesome.me/webawesome/dist/styles/layers.css";
+import "@awesome.me/webawesome/dist/styles/themes/default.css";
+import "@awesome.me/webawesome/dist/components/button/button.js";
+import "@awesome.me/webawesome/dist/components/checkbox/checkbox.js";
+import "@awesome.me/webawesome/dist/components/icon/icon.js";
+import "@awesome.me/webawesome/dist/components/progress-bar/progress-bar.js";
+import "@awesome.me/webawesome/dist/components/select/select.js";
+
 const storageKey = "trip-list-checked-v2";
+const colorScheme = window.matchMedia("(prefers-color-scheme: dark)");
+
+function syncColorScheme() {
+  document.documentElement.classList.toggle("wa-dark", colorScheme.matches);
+  document.documentElement.classList.toggle("wa-light", !colorScheme.matches);
+}
+
+syncColorScheme();
+colorScheme.addEventListener("change", syncColorScheme);
 const listDefinition = JSON.parse(document.querySelector("#list-definition").textContent);
 const checkedIds = loadCheckedIds();
 let sections = listDefinition.map((section) => ({
@@ -13,7 +30,7 @@ let sections = listDefinition.map((section) => ({
 let activeSectionId = sections[0]?.id;
 let showCompleted = true;
 
-const sectionNav = document.querySelector("#section-nav");
+const sectionSelect = document.querySelector("#section-select");
 const checklist = document.querySelector("#checklist");
 const sectionTitle = document.querySelector("#section-title");
 const progressLabel = document.querySelector("#progress-label");
@@ -46,11 +63,9 @@ function render() {
   const visibleSections = showCompleted ? sections : sections.filter((entry) => entry.items.some((item) => !item.done));
   const section = visibleSections.find((entry) => entry.id === activeSectionId) ?? visibleSections[0];
   activeSectionId = section?.id;
-  sectionNav.querySelectorAll("[data-section]").forEach((button) => {
-    const isVisible = visibleSections.some((entry) => entry.id === button.dataset.section);
-    button.hidden = !isVisible;
-    button.setAttribute("aria-current", String(button.dataset.section === activeSectionId));
-  });
+  sectionSelect.innerHTML = visibleSections.map((entry) => `<wa-option value="${entry.id}">${escapeHtml(entry.name)}</wa-option>`).join("");
+  sectionSelect.value = activeSectionId ?? "";
+  sectionSelect.disabled = visibleSections.length === 0;
   sectionTitle.textContent = section?.name ?? "Todo listo";
   sectionToggle.hidden = !section;
   if (section) {
@@ -60,7 +75,7 @@ function render() {
   }
   const visibleItems = section?.items.filter((item) => showCompleted || !item.done) ?? [];
   checklist.innerHTML = visibleItems.length
-    ? visibleItems.map((item) => `<li class="check-item"><input type="checkbox" id="item-${item.id}" data-item="${item.id}" ${item.done ? "checked" : ""} /><label for="item-${item.id}">${escapeHtml(item.label)}</label></li>`).join("")
+    ? visibleItems.map((item) => `<li class="check-item ${item.done ? "is-done" : ""}"><wa-checkbox data-item="${item.id}" ${item.done ? "checked" : ""}>${escapeHtml(item.label)}</wa-checkbox></li>`).join("")
     : `<li class="empty">${section ? (section.items.length ? "No hay elementos pendientes en esta sección." : "Esta sección está vacía por ahora.") : "No quedan elementos pendientes."}</li>`;
   completedToggle.textContent = showCompleted ? "Ocultar completados" : "Mostrar completados";
   completedToggle.setAttribute("aria-pressed", String(!showCompleted));
@@ -73,23 +88,22 @@ function updateProgress() {
   const percent = items.length ? Math.round((done / items.length) * 100) : 0;
   progressLabel.textContent = `${done} de ${items.length} listos`;
   progressPercent.textContent = `${percent}%`;
-  progressBar.style.width = `${percent}%`;
+  progressBar.value = percent;
+  progressBar.label = `Progreso: ${percent}%`;
 }
 
 function escapeHtml(value) { return value.replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char])); }
 
-sectionNav.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-section]");
-  if (!button) return;
-  activeSectionId = button.dataset.section;
+sectionSelect.addEventListener("change", (event) => {
+  activeSectionId = event.target.value;
   render();
 });
 
 checklist.addEventListener("change", (event) => {
-  const input = event.target.closest("[data-item]");
-  if (!input) return;
-  const item = activeSection().items.find((entry) => entry.id === input.dataset.item);
-  if (item) item.done = input.checked;
+  const checkbox = event.target.closest("[data-item]");
+  if (!checkbox) return;
+  const item = activeSection().items.find((entry) => entry.id === checkbox.dataset.item);
+  if (item) item.done = checkbox.checked;
   saveCheckedIds();
   render();
 });
@@ -116,5 +130,4 @@ document.querySelector("#reset-button").addEventListener("click", () => {
 });
 
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
-sectionNav.innerHTML = sections.map((item) => `<button class="section-tab" type="button" data-section="${item.id}" aria-current="${item.id === activeSectionId}">${item.name}</button>`).join("");
 render();
