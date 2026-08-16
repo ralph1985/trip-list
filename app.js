@@ -246,16 +246,18 @@ function tactileFeedback(duration = 8) {
 }
 
 function renderOverview() {
-  refs.overviewGrid.innerHTML = sections.map((section, index) => {
+  const visibleSections = showCompleted ? sections : sections.filter((section) => section.items.some((item) => !item.done));
+  refs.overviewGrid.innerHTML = visibleSections.length ? visibleSections.map((section) => {
     const progress = sectionProgress(section);
     const state = progress.pending === 0 ? "complete" : progress.done > 0 ? "started" : "fresh";
-    return `<button class="category-card ${state} ${index % 5 === 0 ? "is-featured" : ""}" type="button" data-open-section="${section.id}" data-section-summary="${section.id}">
-      <span class="category-index">${String(index + 1).padStart(2, "0")}</span>
+    const originalIndex = sections.indexOf(section);
+    return `<button class="category-card ${state} ${originalIndex % 5 === 0 ? "is-featured" : ""}" type="button" data-open-section="${section.id}" data-section-summary="${section.id}">
+      <span class="category-index">${String(originalIndex + 1).padStart(2, "0")}</span>
       <span class="category-card-copy"><strong>${escapeHtml(section.name)}</strong><small data-section-pending>${progress.pending === 0 ? "Completado" : `${progress.pending} ${progress.pending === 1 ? "pendiente" : "pendientes"}`}</small></span>
       <span class="category-arrow" aria-hidden="true">↗</span>
       <span class="mini-progress" aria-hidden="true"><span data-section-progress style="width: ${section.items.length ? (progress.done / section.items.length) * 100 : 0}%"></span></span>
     </button>`;
-  }).join("");
+  }).join("") : `<div class="empty-state compact overview-empty"><span class="empty-symbol">✓</span><strong>No quedan categorías pendientes</strong><p>La lista está completa.</p></div>`;
 }
 
 function renderCategories() {
