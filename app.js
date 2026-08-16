@@ -510,7 +510,10 @@ refs.closeBadge.addEventListener("click", () => {
 refs.requestBadge.addEventListener("click", async () => {
   const permission = await Notification.requestPermission();
   updateBadgeDialog();
-  if (permission === "granted") updateAppBadge(totals().pending);
+  if (permission === "granted") {
+    updateAppBadge(totals().pending);
+    refs.badgeDialog.open = false;
+  }
 });
 
 function showUpdateBanner(registration) {
