@@ -39,6 +39,8 @@ let showCompleted = loadShowCompleted();
 let searchTerm = "";
 const undoTargets = new Map();
 const undoTimers = new Map();
+const scrollPositions = new Map();
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 let deferredInstallPrompt = null;
 let activeServiceWorkerRegistration = null;
 let isReloadingForUpdate = false;
@@ -173,25 +175,44 @@ function sectionProgress(section) {
   return { done, total: section.items.length, pending: section.items.length - done };
 }
 
+function navigationKey() {
+  return currentView === "category" ? `category:${activeSectionId}` : currentView;
+}
+
+function saveScrollPosition() {
+  scrollPositions.set(navigationKey(), window.scrollY);
+}
+
+function restoreScrollPosition() {
+  const position = scrollPositions.get(navigationKey()) ?? 0;
+  window.requestAnimationFrame(() => window.scrollTo({ top: position, behavior: "auto" }));
+}
+
 function setView(view) {
+  saveScrollPosition();
   currentView = view;
   saveNavigation();
-  document.querySelectorAll(".view-tab").forEach((tab) => {
-    const active = tab.dataset.view === view || (view === "category" && tab.dataset.view === "categories");
-    tab.classList.toggle("is-active", active);
-    tab.setAttribute("aria-current", active ? "page" : "false");
-  });
-  document.querySelectorAll(".view-panel").forEach((panel) => {
-    panel.hidden = panel.id !== `${view}-view` && !(view === "category" && panel.id === "category-view");
-  });
-  const activePanel = document.querySelector(`#${view}-view`) ?? document.querySelector("#category-view");
-  if (activePanel) {
-    activePanel.classList.remove("is-entering");
-    void activePanel.offsetWidth;
-    activePanel.classList.add("is-entering");
-    window.setTimeout(() => activePanel.classList.remove("is-entering"), 240);
-  }
-  render();
+  const updateView = () => {
+    document.querySelectorAll(".view-tab").forEach((tab) => {
+      const active = tab.dataset.view === view || (view === "category" && tab.dataset.view === "categories");
+      tab.classList.toggle("is-active", active);
+      tab.setAttribute("aria-current", active ? "page" : "false");
+    });
+    document.querySelectorAll(".view-panel").forEach((panel) => {
+      panel.hidden = panel.id !== `${view}-view` && !(view === "category" && panel.id === "category-view");
+    });
+    const activePanel = document.querySelector(`#${view}-view`) ?? document.querySelector("#category-view");
+    if (activePanel) {
+      activePanel.classList.remove("is-entering");
+      void activePanel.offsetWidth;
+      activePanel.classList.add("is-entering");
+      window.setTimeout(() => activePanel.classList.remove("is-entering"), 240);
+    }
+    render();
+    restoreScrollPosition();
+  };
+  if (document.startViewTransition && !reducedMotion.matches) document.startViewTransition(updateView);
+  else updateView();
 }
 
 function updateProgress() {

@@ -70,6 +70,13 @@ wa-button { --wa-color-brand-fill-loud: var(--accent); --wa-color-brand-on-loud:
 .view-heading { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin-bottom: 18px; }
 .view-panel.is-entering { animation: view-enter .24s cubic-bezier(.16, 1, .3, 1) both; }
 @keyframes view-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@supports (view-transition-name: root) {
+  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .2s; }
+  ::view-transition-old(root) { animation-name: view-old; }
+  ::view-transition-new(root) { animation-name: view-new; }
+  @keyframes view-old { to { opacity: 0; transform: translateX(-8px); } }
+  @keyframes view-new { from { opacity: 0; transform: translateX(8px); } }
+}
 .section-kicker { margin-bottom: 6px; color: var(--muted); font-size: .65rem; }
 h2 { margin-bottom: 0; font-size: clamp(1.7rem, 4vw, 2.25rem); letter-spacing: -.06em; line-height: 1; }
 .status-note { color: var(--muted); font-size: .8rem; }
