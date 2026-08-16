@@ -18,7 +18,7 @@
           <h1>Antes de salir</h1>
           <p class="intro">Tu lista de viaje, sin ruido y siempre a mano.</p>
         </div>
-        <button class="icon-button" id="reset-button" type="button" title="Restaurar lista inicial" aria-label="Restaurar lista inicial">↺</button>
+        <button class="icon-button" id="reset-button" type="button" title="Desmarcar toda la lista" aria-label="Desmarcar toda la lista">↺</button>
       </header>
 
       <section class="summary" aria-label="Progreso">
@@ -37,20 +37,29 @@
             <p class="section-kicker">Sección actual</p>
             <h2 id="section-title">Otros</h2>
           </div>
-          <button class="text-button" id="add-button" type="button">+ Añadir</button>
         </div>
-        <form class="add-form" id="add-form" hidden>
-          <label for="new-item">Nuevo elemento</label>
-          <div class="add-row">
-            <input id="new-item" name="new-item" autocomplete="off" placeholder="Ej. Reservas del hotel" />
-            <button class="primary-button" type="submit">Guardar</button>
-          </div>
-        </form>
         <ul class="checklist" id="checklist"></ul>
       </section>
 
       <p class="storage-note">Se guarda automáticamente en este dispositivo.</p>
     </main>
+    <script id="list-definition" type="application/json">
+      [
+        {"name":"Otros","items":["Lentillas","Gafas de sol sin graduar","Gafas secundarias","Férula","Cepillos interdentales","Llaves de Palomares","Llaves de Cuenca","Mando garaje Cuenca","Llaves de Getafe","Llaves de Meco","Dinero en efectivo","Cartera DNI","Pasaporte","Bolsa de plástico","Cinturón","Botella agua Decathlon","Saquito de semillas","Nueva mochila Toledo"]},
+        {"name":"Casa","items":["Activar cámara de seguridad","Activar cámara 2","Cerrar rejas","Abrir rejas","Preparativos lluvia","Apagar y desenchufar regletas","Cerrar velux","Gotera velux","Nevera para tuppers","Semillas de lino","¿Está el microondas vacío?","¿Luces apagadas?","Apagar aire acondicionado"]},
+        {"name":"Bici","items":["Zapatillas con calas","Calcetines","Culot","Separador de ropa para lavar el culot","Casco","Pantalón corto","Guantes","Mochila hidratación","Botella","Garmin","Cargador Garmin","Desengrasante","Aparato azul desengrasante","Cera cadena","Limpiahorquillas","Trapos","Detergente"]},
+        {"name":"Trekking","items":["Zapatillas Salomón","Botas Salomón","Palos","Mochila","Navaja","Impermeable","Crema rozaduras (culito bebé)","Compeed (rozaduras)","Malla fina caminatas","Mochila hidratación deporte","Cantimplora","Vaselina","Braga para correr"]},
+        {"name":"Tiempo","items":["Paraguas","Impermeable","Chubasquero","Gorro","Guantes","Botas"]},
+        {"name":"Drogas","items":["Coligas","Paracetamol","Biodramina","Omeprazol","Mascarillas","Termómetro","Probióticos"]},
+        {"name":"Homeopatía","items":[]},
+        {"name":"Coche","items":["Cargador y soportes móvil para el coche","Inflador ruedas coche","Telepeaje"]},
+        {"name":"Tecnología","items":["Enchufes Costa Rica (en mochila mavic)","Cargador móvil","Cargador Garmin","Batería portátil","Cargador Android","Airpods","Cascos dormir","Reloj Garmin","Drone","Mando drone","Aspas drone","Baterías drone","Cargar baterías drone","Cargar mando drone","GoPro","Cargar GoPro","Liberar espacio GoPro","Cámara Lumix","Cargador baterías Lumix","Macbook (curro)","Cargador Macbook","MSI (portátil personal)","Cargador portátil MSI","Maquinilla de afeitar","Libro","Descargar capítulos de series","Descargar películas","Descargar Netflix","Descargar podcasts"]},
+        {"name":"Playa","items":["Bañador","Tapones oídos","Toallas playa","Toalla microfibra (por si no hay en el hostal/hotel)","Chanclas","Gafas buceo","Crema sol","Escarpines","Bolso naranja impermeable"]},
+        {"name":"Picnic","items":["Mesa y sillas","Silla Decathlon","Nevera","Servilletas","Cubiertos","Refrescos","Manta suelo","Bolsas de basura","Crema","Gorros","Palillos"]},
+        {"name":"Spa","items":["Lentillas","Bañador","Gorro de baño"]},
+        {"name":"Juegos","items":["Rumi","Virus","Sushi go","Twister"]}
+      ]
+    </script>
     <script type="module" src="/app.js"></script>
   </body>
 </html>
