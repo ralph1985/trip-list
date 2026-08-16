@@ -195,11 +195,11 @@ function renderOverview() {
   refs.overviewGrid.innerHTML = sections.map((section, index) => {
     const progress = sectionProgress(section);
     const state = progress.pending === 0 ? "complete" : progress.done > 0 ? "started" : "fresh";
-    return `<button class="category-card ${state} ${index % 5 === 0 ? "is-featured" : ""}" type="button" data-open-section="${section.id}">
+    return `<button class="category-card ${state} ${index % 5 === 0 ? "is-featured" : ""}" type="button" data-open-section="${section.id}" data-section-summary="${section.id}">
       <span class="category-index">${String(index + 1).padStart(2, "0")}</span>
-      <span class="category-card-copy"><strong>${escapeHtml(section.name)}</strong><small>${progress.pending === 0 ? "Completado" : `${progress.pending} ${progress.pending === 1 ? "pendiente" : "pendientes"}`}</small></span>
+      <span class="category-card-copy"><strong>${escapeHtml(section.name)}</strong><small data-section-pending>${progress.pending === 0 ? "Completado" : `${progress.pending} ${progress.pending === 1 ? "pendiente" : "pendientes"}`}</small></span>
       <span class="category-arrow" aria-hidden="true">↗</span>
-      <span class="mini-progress" aria-hidden="true"><span style="width: ${section.items.length ? (progress.done / section.items.length) * 100 : 0}%"></span></span>
+      <span class="mini-progress" aria-hidden="true"><span data-section-progress style="width: ${section.items.length ? (progress.done / section.items.length) * 100 : 0}%"></span></span>
     </button>`;
   }).join("");
 }
@@ -207,9 +207,9 @@ function renderOverview() {
 function renderCategories() {
   refs.categoriesList.innerHTML = sections.map((section) => {
     const progress = sectionProgress(section);
-    return `<button class="category-row" type="button" data-open-section="${section.id}">
+    return `<button class="category-row" type="button" data-open-section="${section.id}" data-section-summary="${section.id}">
       <span class="category-row-name">${escapeHtml(section.name)}</span>
-      <span class="category-row-progress"><span>${progress.done}/${progress.total}</span><span class="row-bar"><i style="width: ${progress.total ? (progress.done / progress.total) * 100 : 0}%"></i></span></span>
+      <span class="category-row-progress"><span data-section-count>${progress.done}/${progress.total}</span><span class="row-bar"><i data-section-progress style="width: ${progress.total ? (progress.done / progress.total) * 100 : 0}%"></i></span></span>
       <span class="category-arrow" aria-hidden="true">→</span>
     </button>`;
   }).join("");
@@ -264,17 +264,59 @@ function render() {
   if (currentView === "category") renderCategory();
 }
 
+function updateSectionSummary(section) {
+  const progress = sectionProgress(section);
+  document.querySelectorAll(`[data-section-summary="${section.id}"]`).forEach((summary) => {
+    const pending = summary.querySelector("[data-section-pending]");
+    const count = summary.querySelector("[data-section-count]");
+    const bar = summary.querySelector("[data-section-progress]");
+    if (pending) pending.textContent = progress.pending === 0 ? "Completado" : `${progress.pending} ${progress.pending === 1 ? "pendiente" : "pendientes"}`;
+    if (count) count.textContent = `${progress.done}/${progress.total}`;
+    if (bar) bar.style.width = `${progress.total ? (progress.done / progress.total) * 100 : 0}%`;
+    summary.classList.toggle("complete", progress.pending === 0);
+    summary.classList.toggle("started", progress.done > 0 && progress.pending > 0);
+  });
+}
+
+function updateVisibleItem(item, section) {
+  updateSectionSummary(section);
+  updateProgress();
+  const containers = [];
+  if (currentView === "pending") containers.push(refs.pendingList);
+  if (currentView === "category" && activeSectionId === section.id) containers.push(refs.checklist);
+  containers.forEach((container) => {
+    const checkbox = container.querySelector(`[data-item="${item.id}"]`);
+    const undoButton = container.querySelector(`[data-undo="${item.id}"]`);
+    const row = checkbox?.closest("li") ?? undoButton?.closest("li");
+    if (!row) return;
+    if (item.done && !showCompleted) {
+      row.outerHTML = undoItem(item.id);
+      return;
+    }
+    if (item.done) {
+      row.classList.add("is-done", "was-just-completed");
+      const rowCheckbox = row.querySelector("wa-checkbox");
+      if (rowCheckbox) rowCheckbox.checked = true;
+      return;
+    }
+    row.outerHTML = checklistItem(item);
+    container.querySelector(`[data-item="${item.id}"]`)?.closest("li")?.classList.add("was-just-restored");
+  });
+}
+
 document.querySelectorAll(".view-tab").forEach((tab) => tab.addEventListener("click", () => setView(tab.dataset.view)));
 
 document.addEventListener("click", (event) => {
   const undoButton = event.target.closest("[data-undo]");
   if (undoButton && undoTargets.has(undoButton.dataset.undo)) {
     const item = sections.flatMap((section) => section.items).find((entry) => entry.id === undoButton.dataset.undo);
+    const section = sections.find((entry) => entry.items.some((entryItem) => entryItem.id === undoButton.dataset.undo));
     if (item) {
       item.done = false;
       saveCheckedIds();
     }
-    removeUndoTarget(undoButton.dataset.undo);
+    removeUndoTarget(undoButton.dataset.undo, false);
+    if (item && section) updateVisibleItem(item, section);
     return;
   }
   const openButton = event.target.closest("[data-open-section]");
@@ -296,7 +338,7 @@ function toggleItem(checkbox) {
   if (item.done && !showCompleted && section) setUndoTarget(section.id, item.id);
   if (!item.done) removeUndoTarget(item.id, false);
   saveCheckedIds();
-  render();
+  updateVisibleItem(item, section);
 }
 
 refs.completedToggle.addEventListener("click", () => {
