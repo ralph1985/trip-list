@@ -44,9 +44,9 @@ function slugify(value) {
 function render() {
   const section = activeSection();
   activeSectionId = section?.id;
-  const navScrollLeft = sectionNav.scrollLeft;
-  sectionNav.innerHTML = sections.map((item) => `<button class="section-tab" type="button" data-section="${item.id}" aria-current="${item.id === activeSectionId}">${item.name}</button>`).join("");
-  sectionNav.scrollLeft = navScrollLeft;
+  sectionNav.querySelectorAll("[data-section]").forEach((button) => {
+    button.setAttribute("aria-current", String(button.dataset.section === activeSectionId));
+  });
   sectionTitle.textContent = section?.name ?? "Lista";
   const visibleItems = section?.items.filter((item) => showCompleted || !item.done) ?? [];
   checklist.innerHTML = visibleItems.length
@@ -97,4 +97,5 @@ document.querySelector("#reset-button").addEventListener("click", () => {
 });
 
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
+sectionNav.innerHTML = sections.map((item) => `<button class="section-tab" type="button" data-section="${item.id}" aria-current="${item.id === activeSectionId}">${item.name}</button>`).join("");
 render();
