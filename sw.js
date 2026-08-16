@@ -1,4 +1,4 @@
-const CACHE = "trip-list-v4";
+const CACHE = "trip-list-v5";
 const ASSETS = ["/", "/index.html", "/styles.css", "/app.js", "/manifest.webmanifest", "/icon.svg"];
 const APP_SHELL = new Set(["document", "script", "style"]);
 

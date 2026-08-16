@@ -8,46 +8,93 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/styles.css" />
-    <title>TripList</title>
+    <title>TripList · Antes de salir</title>
   </head>
   <body>
     <main class="app-shell">
       <header class="app-header">
-        <div>
-          <p class="eyebrow">TripList</p>
-          <h1>Antes de salir</h1>
-          <p class="intro">Tu lista de viaje, sin ruido y siempre a mano.</p>
+        <div class="brand-lockup">
+          <p class="eyebrow">TripList <span>·</span> preparación</p>
+          <h1>Antes de salir<span class="title-mark">.</span></h1>
+          <p class="intro">Todo lo que conviene revisar antes de cerrar la puerta.</p>
         </div>
         <wa-button id="reset-button" appearance="plain" circle size="m" title="Desmarcar toda la lista" aria-label="Desmarcar toda la lista">
           <wa-icon name="rotate-left" label="Desmarcar toda la lista"></wa-icon>
         </wa-button>
       </header>
 
-      <section class="summary" aria-label="Progreso">
-        <div class="summary-line">
-          <span id="progress-label">0 de 0 listos</span>
-          <span id="progress-percent">0%</span>
+      <section class="progress-panel" aria-label="Progreso">
+        <div class="progress-copy">
+          <div>
+            <p class="panel-label">Preparación general</p>
+            <strong id="progress-label">0 de 0 listos</strong>
+          </div>
+          <span id="progress-percent" class="progress-percent">0%</span>
         </div>
         <wa-progress-bar id="progress-bar" value="0" label="Progreso de la lista"></wa-progress-bar>
-        <wa-button id="completed-toggle" appearance="plain" variant="brand" size="s" aria-pressed="false">Ocultar completados</wa-button>
+        <div class="progress-footer">
+          <span id="progress-message">Empieza por lo que no quieres olvidar.</span>
+          <wa-button id="completed-toggle" appearance="plain" variant="brand" size="s" aria-pressed="false">Ocultar completados</wa-button>
+        </div>
       </section>
 
-      <div class="section-picker">
-        <wa-select id="section-select" label="Categoría" size="s" hoist></wa-select>
-      </div>
+      <nav class="view-switcher" aria-label="Vistas de la lista">
+        <button class="view-tab is-active" type="button" data-view="overview">Resumen</button>
+        <button class="view-tab" type="button" data-view="pending">Pendientes <span id="pending-count" class="tab-count">0</span></button>
+        <button class="view-tab" type="button" data-view="categories">Categorías</button>
+      </nav>
 
-      <section class="list-area">
-        <div class="list-heading">
+      <section id="overview-view" class="view-panel" aria-labelledby="overview-title">
+        <div class="view-heading">
+          <div>
+            <p class="section-kicker">Vista rápida</p>
+            <h2 id="overview-title">Sigue desde aquí</h2>
+          </div>
+          <span id="overview-status" class="status-note">Todo por revisar</span>
+        </div>
+        <div id="overview-grid" class="category-grid"></div>
+      </section>
+
+      <section id="pending-view" class="view-panel" hidden aria-labelledby="pending-title">
+        <div class="view-heading">
+          <div>
+            <p class="section-kicker">Lo que queda</p>
+            <h2 id="pending-title">Pendientes</h2>
+          </div>
+          <span id="pending-status" class="status-note"></span>
+        </div>
+        <div class="search-box">
+          <wa-icon name="search" label="Buscar"></wa-icon>
+          <input id="search-input" type="search" autocomplete="off" placeholder="Buscar en la lista" aria-label="Buscar en la lista" />
+          <button id="clear-search" class="clear-search" type="button" aria-label="Borrar búsqueda" hidden>Limpiar</button>
+        </div>
+        <div id="pending-list" class="pending-list"></div>
+      </section>
+
+      <section id="categories-view" class="view-panel" hidden aria-labelledby="categories-title">
+        <div class="view-heading">
+          <div>
+            <p class="section-kicker">La lista completa</p>
+            <h2 id="categories-title">Categorías</h2>
+          </div>
+          <span class="status-note">Selecciona una para continuar</span>
+        </div>
+        <div id="categories-list" class="categories-list"></div>
+      </section>
+
+      <section id="category-view" class="view-panel category-view" hidden aria-labelledby="section-title">
+        <button id="back-to-categories" class="back-link" type="button">← Todas las categorías</button>
+        <div class="view-heading category-heading">
           <div>
             <p class="section-kicker">Sección actual</p>
-            <h2 id="section-title">Otros</h2>
+            <h2 id="section-title"></h2>
           </div>
           <wa-button id="section-toggle" appearance="plain" variant="brand" size="s">Marcar todo</wa-button>
         </div>
         <ul class="checklist" id="checklist"></ul>
       </section>
 
-      <p class="storage-note">Se guarda automáticamente en este dispositivo.</p>
+      <p class="storage-note"><wa-icon name="lock" label="Privado"></wa-icon> Se guarda automáticamente en este dispositivo.</p>
     </main>
     <script id="list-definition" type="application/json">
       [

@@ -4,10 +4,11 @@ import "@awesome.me/webawesome/dist/components/button/button.js";
 import "@awesome.me/webawesome/dist/components/checkbox/checkbox.js";
 import "@awesome.me/webawesome/dist/components/icon/icon.js";
 import "@awesome.me/webawesome/dist/components/progress-bar/progress-bar.js";
-import "@awesome.me/webawesome/dist/components/select/select.js";
 
 const storageKey = "trip-list-checked-v2";
 const colorScheme = window.matchMedia("(prefers-color-scheme: dark)");
+const listDefinition = JSON.parse(document.querySelector("#list-definition").textContent);
+const checkedIds = loadCheckedIds();
 
 function syncColorScheme() {
   document.documentElement.classList.toggle("wa-dark", colorScheme.matches);
@@ -16,8 +17,7 @@ function syncColorScheme() {
 
 syncColorScheme();
 colorScheme.addEventListener("change", syncColorScheme);
-const listDefinition = JSON.parse(document.querySelector("#list-definition").textContent);
-const checkedIds = loadCheckedIds();
+
 let sections = listDefinition.map((section) => ({
   ...section,
   id: slugify(section.name),
@@ -27,17 +27,30 @@ let sections = listDefinition.map((section) => ({
     done: checkedIds.has(`${slugify(section.name)}-${slugify(label)}`)
   }))
 }));
+
+let currentView = "overview";
 let activeSectionId = sections[0]?.id;
 let showCompleted = true;
+let searchTerm = "";
 
-const sectionSelect = document.querySelector("#section-select");
-const checklist = document.querySelector("#checklist");
-const sectionTitle = document.querySelector("#section-title");
-const progressLabel = document.querySelector("#progress-label");
-const progressPercent = document.querySelector("#progress-percent");
-const progressBar = document.querySelector("#progress-bar");
-const completedToggle = document.querySelector("#completed-toggle");
-const sectionToggle = document.querySelector("#section-toggle");
+const refs = {
+  checklist: document.querySelector("#checklist"),
+  sectionTitle: document.querySelector("#section-title"),
+  progressLabel: document.querySelector("#progress-label"),
+  progressPercent: document.querySelector("#progress-percent"),
+  progressBar: document.querySelector("#progress-bar"),
+  progressMessage: document.querySelector("#progress-message"),
+  completedToggle: document.querySelector("#completed-toggle"),
+  sectionToggle: document.querySelector("#section-toggle"),
+  overviewGrid: document.querySelector("#overview-grid"),
+  categoriesList: document.querySelector("#categories-list"),
+  pendingList: document.querySelector("#pending-list"),
+  pendingCount: document.querySelector("#pending-count"),
+  overviewStatus: document.querySelector("#overview-status"),
+  pendingStatus: document.querySelector("#pending-status"),
+  searchInput: document.querySelector("#search-input"),
+  clearSearch: document.querySelector("#clear-search")
+};
 
 function loadCheckedIds() {
   try {
@@ -53,72 +66,163 @@ function saveCheckedIds() {
   localStorage.setItem(storageKey, JSON.stringify(checked));
 }
 
-function activeSection() { return sections.find((section) => section.id === activeSectionId) ?? sections[0]; }
+function activeSection() {
+  return sections.find((section) => section.id === activeSectionId) ?? sections[0];
+}
 
 function slugify(value) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
-function render() {
-  const visibleSections = showCompleted ? sections : sections.filter((entry) => entry.items.some((item) => !item.done));
-  const section = visibleSections.find((entry) => entry.id === activeSectionId) ?? visibleSections[0];
-  activeSectionId = section?.id;
-  sectionSelect.innerHTML = visibleSections.map((entry) => `<wa-option value="${entry.id}">${escapeHtml(entry.name)}</wa-option>`).join("");
-  sectionSelect.value = activeSectionId ?? "";
-  sectionSelect.disabled = visibleSections.length === 0;
-  sectionTitle.textContent = section?.name ?? "Todo listo";
-  sectionToggle.hidden = !section;
-  if (section) {
-    const allDone = section.items.length > 0 && section.items.every((item) => item.done);
-    sectionToggle.textContent = allDone ? "Desmarcar todo" : "Marcar todo";
-    sectionToggle.setAttribute("aria-label", `${allDone ? "Desmarcar" : "Marcar"} todos los elementos de ${section.name}`);
-  }
-  const visibleItems = section?.items.filter((item) => showCompleted || !item.done) ?? [];
-  checklist.innerHTML = visibleItems.length
-    ? visibleItems.map((item) => `<li class="check-item ${item.done ? "is-done" : ""}"><wa-checkbox data-item="${item.id}" ${item.done ? "checked" : ""}>${escapeHtml(item.label)}</wa-checkbox></li>`).join("")
-    : `<li class="empty">${section ? (section.items.length ? "No hay elementos pendientes en esta sección." : "Esta sección está vacía por ahora.") : "No quedan elementos pendientes."}</li>`;
-  completedToggle.textContent = showCompleted ? "Ocultar completados" : "Mostrar completados";
-  completedToggle.setAttribute("aria-pressed", String(!showCompleted));
-  updateProgress();
+function escapeHtml(value) {
+  return value.replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
+}
+
+function totals() {
+  const items = sections.flatMap((section) => section.items);
+  const done = items.filter((item) => item.done).length;
+  return { total: items.length, done, pending: items.length - done };
+}
+
+function sectionProgress(section) {
+  const done = section.items.filter((item) => item.done).length;
+  return { done, total: section.items.length, pending: section.items.length - done };
+}
+
+function setView(view) {
+  currentView = view;
+  document.querySelectorAll(".view-tab").forEach((tab) => {
+    const active = tab.dataset.view === view;
+    tab.classList.toggle("is-active", active);
+    tab.setAttribute("aria-current", active ? "page" : "false");
+  });
+  document.querySelectorAll(".view-panel").forEach((panel) => {
+    panel.hidden = panel.id !== `${view}-view` && !(view === "category" && panel.id === "category-view");
+  });
+  render();
 }
 
 function updateProgress() {
-  const items = sections.flatMap((section) => section.items);
-  const done = items.filter((item) => item.done).length;
-  const percent = items.length ? Math.round((done / items.length) * 100) : 0;
-  progressLabel.textContent = `${done} de ${items.length} listos`;
-  progressPercent.textContent = `${percent}%`;
-  progressBar.value = percent;
-  progressBar.label = `Progreso: ${percent}%`;
+  const { total, done, pending } = totals();
+  const percent = total ? Math.round((done / total) * 100) : 0;
+  refs.progressLabel.textContent = `${done} de ${total} listos`;
+  refs.progressPercent.textContent = `${percent}%`;
+  refs.progressBar.value = percent;
+  refs.progressBar.label = `Progreso: ${percent}%`;
+  refs.pendingCount.textContent = pending;
+  refs.progressMessage.textContent = pending === 0 ? "Todo preparado para salir." : `${pending} ${pending === 1 ? "cosa pendiente" : "cosas pendientes"} para revisar.`;
+  refs.overviewStatus.textContent = pending === 0 ? "Lista completa" : `${pending} pendientes`;
+  refs.pendingStatus.textContent = searchTerm ? "Filtrando resultados" : `${pending} por revisar`;
 }
 
-function escapeHtml(value) { return value.replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char])); }
+function renderOverview() {
+  refs.overviewGrid.innerHTML = sections.map((section, index) => {
+    const progress = sectionProgress(section);
+    const state = progress.pending === 0 ? "complete" : progress.done > 0 ? "started" : "fresh";
+    return `<button class="category-card ${state} ${index % 5 === 0 ? "is-featured" : ""}" type="button" data-open-section="${section.id}">
+      <span class="category-index">${String(index + 1).padStart(2, "0")}</span>
+      <span class="category-card-copy"><strong>${escapeHtml(section.name)}</strong><small>${progress.pending === 0 ? "Completado" : `${progress.pending} ${progress.pending === 1 ? "pendiente" : "pendientes"}`}</small></span>
+      <span class="category-arrow" aria-hidden="true">↗</span>
+      <span class="mini-progress" aria-hidden="true"><span style="width: ${section.items.length ? (progress.done / section.items.length) * 100 : 0}%"></span></span>
+    </button>`;
+  }).join("");
+}
 
-sectionSelect.addEventListener("change", (event) => {
-  activeSectionId = event.target.value;
-  render();
+function renderCategories() {
+  refs.categoriesList.innerHTML = sections.map((section) => {
+    const progress = sectionProgress(section);
+    return `<button class="category-row" type="button" data-open-section="${section.id}">
+      <span class="category-row-name">${escapeHtml(section.name)}</span>
+      <span class="category-row-progress"><span>${progress.done}/${progress.total}</span><span class="row-bar"><i style="width: ${progress.total ? (progress.done / progress.total) * 100 : 0}%"></i></span></span>
+      <span class="category-arrow" aria-hidden="true">→</span>
+    </button>`;
+  }).join("");
+}
+
+function renderPending() {
+  const normalizedSearch = searchTerm.trim().toLocaleLowerCase();
+  const groups = sections.map((section) => ({
+    section,
+    items: section.items.filter((item) => (!item.done || showCompleted) && (!normalizedSearch || item.label.toLocaleLowerCase().includes(normalizedSearch) || section.name.toLocaleLowerCase().includes(normalizedSearch)))
+  })).filter(({ items }) => items.length);
+
+  refs.clearSearch.hidden = !searchTerm;
+  refs.pendingList.innerHTML = groups.length
+    ? groups.map(({ section, items }) => `<section class="pending-group"><div class="pending-group-heading"><h3>${escapeHtml(section.name)}</h3><button type="button" data-open-section="${section.id}">Ver sección →</button></div><ul class="checklist">${items.map((item) => checklistItem(item)).join("")}</ul></section>`).join("")
+    : `<div class="empty-state"><span class="empty-symbol">✓</span><strong>${searchTerm ? "No hemos encontrado nada" : "No quedan pendientes"}</strong><p>${searchTerm ? "Prueba con otra palabra." : "La lista está completa. Buen viaje."}</p></div>`;
+}
+
+function checklistItem(item) {
+  return `<li class="check-item ${item.done ? "is-done" : ""}"><wa-checkbox data-item="${item.id}" ${item.done ? "checked" : ""}>${escapeHtml(item.label)}</wa-checkbox></li>`;
+}
+
+function renderCategory() {
+  const section = activeSection();
+  if (!section) return;
+  const progress = sectionProgress(section);
+  refs.sectionTitle.textContent = section.name;
+  const allDone = progress.total > 0 && progress.pending === 0;
+  refs.sectionToggle.textContent = allDone ? "Desmarcar todo" : "Marcar todo";
+  refs.sectionToggle.setAttribute("aria-label", `${allDone ? "Desmarcar" : "Marcar"} todos los elementos de ${section.name}`);
+  const items = section.items.filter((item) => showCompleted || !item.done);
+  refs.checklist.innerHTML = items.length ? items.map(checklistItem).join("") : `<li class="empty-state compact"><strong>${section.items.length ? "No hay elementos pendientes" : "Esta sección está vacía"}</strong><p>${section.items.length ? "Puedes volver a mostrar los completados." : ""}</p></li>`;
+}
+
+function render() {
+  updateProgress();
+  renderOverview();
+  renderCategories();
+  renderPending();
+  if (currentView === "category") renderCategory();
+}
+
+document.querySelectorAll(".view-tab").forEach((tab) => tab.addEventListener("click", () => setView(tab.dataset.view)));
+
+document.addEventListener("click", (event) => {
+  const openButton = event.target.closest("[data-open-section]");
+  if (openButton) {
+    activeSectionId = openButton.dataset.openSection;
+    setView("category");
+  }
 });
 
-checklist.addEventListener("change", (event) => {
-  const checkbox = event.target.closest("[data-item]");
+refs.checklist.addEventListener("change", (event) => toggleItem(event.target.closest("[data-item]")));
+refs.pendingList.addEventListener("change", (event) => toggleItem(event.target.closest("[data-item]")));
+
+function toggleItem(checkbox) {
   if (!checkbox) return;
-  const item = activeSection().items.find((entry) => entry.id === checkbox.dataset.item);
-  if (item) item.done = checkbox.checked;
+  const item = sections.flatMap((section) => section.items).find((entry) => entry.id === checkbox.dataset.item);
+  if (!item) return;
+  item.done = checkbox.checked;
   saveCheckedIds();
   render();
-});
+}
 
-completedToggle.addEventListener("click", () => {
+refs.completedToggle.addEventListener("click", () => {
   showCompleted = !showCompleted;
+  refs.completedToggle.textContent = showCompleted ? "Ocultar completados" : "Mostrar completados";
+  refs.completedToggle.setAttribute("aria-pressed", String(!showCompleted));
   render();
 });
 
-sectionToggle.addEventListener("click", () => {
+refs.sectionToggle.addEventListener("click", () => {
   const section = activeSection();
   if (!section) return;
   const allDone = section.items.length > 0 && section.items.every((item) => item.done);
   section.items.forEach((item) => { item.done = !allDone; });
   saveCheckedIds();
+  render();
+});
+
+document.querySelector("#back-to-categories").addEventListener("click", () => setView("categories"));
+refs.searchInput.addEventListener("input", (event) => {
+  searchTerm = event.target.value;
+  render();
+});
+refs.clearSearch.addEventListener("click", () => {
+  searchTerm = "";
+  refs.searchInput.value = "";
+  refs.searchInput.focus();
   render();
 });
 
