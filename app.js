@@ -42,16 +42,19 @@ function slugify(value) {
 }
 
 function render() {
-  const section = activeSection();
+  const visibleSections = showCompleted ? sections : sections.filter((entry) => entry.items.some((item) => !item.done));
+  const section = visibleSections.find((entry) => entry.id === activeSectionId) ?? visibleSections[0];
   activeSectionId = section?.id;
   sectionNav.querySelectorAll("[data-section]").forEach((button) => {
+    const isVisible = visibleSections.some((entry) => entry.id === button.dataset.section);
+    button.hidden = !isVisible;
     button.setAttribute("aria-current", String(button.dataset.section === activeSectionId));
   });
-  sectionTitle.textContent = section?.name ?? "Lista";
+  sectionTitle.textContent = section?.name ?? "Todo listo";
   const visibleItems = section?.items.filter((item) => showCompleted || !item.done) ?? [];
   checklist.innerHTML = visibleItems.length
     ? visibleItems.map((item) => `<li class="check-item"><input type="checkbox" id="item-${item.id}" data-item="${item.id}" ${item.done ? "checked" : ""} /><label for="item-${item.id}">${escapeHtml(item.label)}</label></li>`).join("")
-    : `<li class="empty">${section?.items.length ? "No hay elementos pendientes en esta sección." : "Esta sección está vacía por ahora."}</li>`;
+    : `<li class="empty">${section ? (section.items.length ? "No hay elementos pendientes en esta sección." : "Esta sección está vacía por ahora.") : "No quedan elementos pendientes."}</li>`;
   completedToggle.textContent = showCompleted ? "Ocultar completados" : "Mostrar completados";
   completedToggle.setAttribute("aria-pressed", String(!showCompleted));
   updateProgress();
