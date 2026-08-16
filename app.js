@@ -1,4 +1,4 @@
-const storageKey = "trip-list-checked-v1";
+const storageKey = "trip-list-checked-v2";
 const listDefinition = JSON.parse(document.querySelector("#list-definition").textContent);
 const checkedIds = loadCheckedIds();
 let sections = listDefinition.map((section) => ({
