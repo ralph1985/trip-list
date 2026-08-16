@@ -7,6 +7,8 @@ import "@awesome.me/webawesome/dist/components/progress-bar/progress-bar.js";
 
 const storageKey = "trip-list-checked-v2";
 const completedVisibilityKey = "trip-list-show-completed-v1";
+const viewStorageKey = "trip-list-current-view-v1";
+const sectionStorageKey = "trip-list-current-section-v1";
 const colorScheme = window.matchMedia("(prefers-color-scheme: dark)");
 const listDefinition = JSON.parse(document.querySelector("#list-definition").textContent);
 const checkedIds = loadCheckedIds();
@@ -29,8 +31,8 @@ let sections = listDefinition.map((section) => ({
   }))
 }));
 
-let currentView = "overview";
-let activeSectionId = sections[0]?.id;
+let currentView = loadCurrentView();
+let activeSectionId = loadCurrentSection();
 let showCompleted = loadShowCompleted();
 let searchTerm = "";
 
@@ -75,6 +77,29 @@ function saveShowCompleted() {
   localStorage.setItem(completedVisibilityKey, String(showCompleted));
 }
 
+function loadCurrentView() {
+  try {
+    const saved = localStorage.getItem(viewStorageKey);
+    return ["overview", "pending", "categories", "category"].includes(saved) ? saved : "overview";
+  } catch {
+    return "overview";
+  }
+}
+
+function loadCurrentSection() {
+  try {
+    const saved = localStorage.getItem(sectionStorageKey);
+    return sections.some((section) => section.id === saved) ? saved : sections[0]?.id;
+  } catch {
+    return sections[0]?.id;
+  }
+}
+
+function saveNavigation() {
+  localStorage.setItem(viewStorageKey, currentView);
+  if (activeSectionId) localStorage.setItem(sectionStorageKey, activeSectionId);
+}
+
 function saveCheckedIds() {
   const checked = sections.flatMap((section) => section.items).filter((item) => item.done).map((item) => item.id);
   localStorage.setItem(storageKey, JSON.stringify(checked));
@@ -105,6 +130,7 @@ function sectionProgress(section) {
 
 function setView(view) {
   currentView = view;
+  saveNavigation();
   document.querySelectorAll(".view-tab").forEach((tab) => {
     const active = tab.dataset.view === view;
     tab.classList.toggle("is-active", active);
@@ -249,4 +275,4 @@ document.querySelector("#reset-button").addEventListener("click", () => {
 });
 
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
-render();
+setView(currentView);
