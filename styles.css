@@ -45,6 +45,10 @@ h1, h2, h3, p { margin-top: 0; }
 h1 { margin-bottom: 12px; font-size: clamp(2.75rem, 8vw, 5.8rem); letter-spacing: -.075em; line-height: .9; }
 .title-mark { color: var(--accent); }
 .intro { max-width: 34rem; margin-bottom: 0; color: var(--muted); font-size: 1.05rem; }
+.connection-status { display: flex; align-items: center; gap: 7px; margin: 18px 0 0; color: var(--muted); font-size: .72rem; }
+.connection-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.connection-status.is-offline { color: var(--accent-strong); }
+.connection-status.is-offline .connection-dot { background: #c58634; box-shadow: 0 0 0 3px color-mix(in srgb, #c58634 20%, transparent); }
 #reset-button::part(base) { width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 50%; color: var(--ink); }
 #reset-button::part(base):hover { background: var(--paper); }
 .progress-panel { margin: 44px 0 28px; padding: 22px 24px 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); box-shadow: var(--shadow); }

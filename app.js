@@ -60,7 +60,8 @@ const refs = {
   clearSearch: document.querySelector("#clear-search"),
   resetDialog: document.querySelector("#reset-dialog"),
   cancelReset: document.querySelector("#cancel-reset"),
-  confirmReset: document.querySelector("#confirm-reset")
+  confirmReset: document.querySelector("#confirm-reset"),
+  connectionStatus: document.querySelector("#connection-status")
 };
 
 function loadCheckedIds() {
@@ -133,6 +134,12 @@ function clearUndoTargets() {
 function saveCheckedIds() {
   const checked = sections.flatMap((section) => section.items).filter((item) => item.done).map((item) => item.id);
   localStorage.setItem(storageKey, JSON.stringify(checked));
+}
+
+function updateConnectionStatus() {
+  const online = navigator.onLine;
+  refs.connectionStatus.classList.toggle("is-offline", !online);
+  refs.connectionStatus.querySelector("span:last-child").textContent = online ? "Con conexión" : "Sin conexión · guardado local";
 }
 
 function activeSection() {
@@ -388,4 +395,7 @@ refs.confirmReset.addEventListener("click", () => {
 });
 
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
+window.addEventListener("online", updateConnectionStatus);
+window.addEventListener("offline", updateConnectionStatus);
+updateConnectionStatus();
 setView(currentView);
