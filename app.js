@@ -205,14 +205,15 @@ function renderOverview() {
 }
 
 function renderCategories() {
-  refs.categoriesList.innerHTML = sections.map((section) => {
+  const visibleSections = showCompleted ? sections : sections.filter((section) => section.items.some((item) => !item.done));
+  refs.categoriesList.innerHTML = visibleSections.length ? visibleSections.map((section) => {
     const progress = sectionProgress(section);
     return `<button class="category-row" type="button" data-open-section="${section.id}" data-section-summary="${section.id}">
       <span class="category-row-name">${escapeHtml(section.name)}</span>
       <span class="category-row-progress"><span data-section-count>${progress.done}/${progress.total}</span><span class="row-bar"><i data-section-progress style="width: ${progress.total ? (progress.done / progress.total) * 100 : 0}%"></i></span></span>
       <span class="category-arrow" aria-hidden="true">→</span>
     </button>`;
-  }).join("");
+  }).join("") : `<div class="empty-state compact"><span class="empty-symbol">✓</span><strong>No quedan categorías pendientes</strong><p>La lista está completa.</p></div>`;
 }
 
 function renderPending() {
