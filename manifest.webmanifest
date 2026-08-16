@@ -1,0 +1,11 @@
+{
+  "name": "TripList",
+  "short_name": "TripList",
+  "description": "Listas sencillas para no olvidar nada antes de viajar.",
+  "lang": "es",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f1ea",
+  "theme_color": "#f4f1ea",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

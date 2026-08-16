@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f4f1ea" />
+    <meta name="description" content="Listas sencillas para no olvidar nada antes de viajar." />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+    <title>TripList</title>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">TripList</p>
+          <h1>Antes de salir</h1>
+          <p class="intro">Tu lista de viaje, sin ruido y siempre a mano.</p>
+        </div>
+        <button class="icon-button" id="reset-button" type="button" title="Restaurar lista inicial" aria-label="Restaurar lista inicial">↺</button>
+      </header>
+
+      <section class="summary" aria-label="Progreso">
+        <div class="summary-line">
+          <span id="progress-label">0 de 0 listos</span>
+          <span id="progress-percent">0%</span>
+        </div>
+        <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
+      </section>
+
+      <nav class="section-nav" id="section-nav" aria-label="Secciones de la lista"></nav>
+
+      <section class="list-area">
+        <div class="list-heading">
+          <div>
+            <p class="section-kicker">Sección actual</p>
+            <h2 id="section-title">Otros</h2>
+          </div>
+          <button class="text-button" id="add-button" type="button">+ Añadir</button>
+        </div>
+        <form class="add-form" id="add-form" hidden>
+          <label for="new-item">Nuevo elemento</label>
+          <div class="add-row">
+            <input id="new-item" name="new-item" autocomplete="off" placeholder="Ej. Reservas del hotel" />
+            <button class="primary-button" type="submit">Guardar</button>
+          </div>
+        </form>
+        <ul class="checklist" id="checklist"></ul>
+      </section>
+
+      <p class="storage-note">Se guarda automáticamente en este dispositivo.</p>
+    </main>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
