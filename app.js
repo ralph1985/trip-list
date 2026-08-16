@@ -73,7 +73,6 @@ const refs = {
   updateBanner: document.querySelector("#update-banner"),
   reloadButton: document.querySelector("#reload-button"),
   quickActions: document.querySelector("#quick-actions"),
-  quickCompletedToggle: document.querySelector("#quick-completed-toggle"),
   quickSectionToggle: document.querySelector("#quick-section-toggle")
 };
 
@@ -233,9 +232,7 @@ function updateProgress() {
 }
 
 function updateQuickActions() {
-  const actionLabel = showCompleted ? "Ocultar completados" : "Mostrar completados";
-  refs.quickCompletedToggle.querySelector("span").textContent = actionLabel;
-  refs.quickCompletedToggle.querySelector("wa-icon").setAttribute("label", actionLabel);
+  refs.quickActions.hidden = currentView !== "category";
   refs.quickSectionToggle.hidden = currentView !== "category";
   if (currentView === "category") {
     const section = activeSection();
@@ -409,7 +406,6 @@ function toggleCompletedVisibility() {
 }
 
 refs.completedToggle.addEventListener("click", toggleCompletedVisibility);
-refs.quickCompletedToggle.addEventListener("click", toggleCompletedVisibility);
 refs.quickSectionToggle.addEventListener("click", () => refs.sectionToggle.click());
 
 refs.sectionToggle.addEventListener("click", () => {
