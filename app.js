@@ -7,7 +7,7 @@ let sections = listDefinition.map((section) => ({
   items: section.items.map((label) => ({
     id: `${slugify(section.name)}-${slugify(label)}`,
     label,
-    done: checkedIds.has(`${sectionIndex}-${itemIndex}`)
+    done: checkedIds.has(`${slugify(section.name)}-${slugify(label)}`)
   }))
 }));
 let activeSectionId = sections[0]?.id;
