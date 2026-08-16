@@ -4,6 +4,7 @@ import "@awesome.me/webawesome/dist/components/button/button.js";
 import "@awesome.me/webawesome/dist/components/checkbox/checkbox.js";
 import "@awesome.me/webawesome/dist/components/icon/icon.js";
 import "@awesome.me/webawesome/dist/components/progress-bar/progress-bar.js";
+import "@awesome.me/webawesome/dist/components/animation/animation.js";
 
 const storageKey = "trip-list-checked-v2";
 const completedVisibilityKey = "trip-list-show-completed-v1";
@@ -163,6 +164,13 @@ function setView(view) {
   document.querySelectorAll(".view-panel").forEach((panel) => {
     panel.hidden = panel.id !== `${view}-view` && !(view === "category" && panel.id === "category-view");
   });
+  const activePanel = document.querySelector(`#${view}-view`) ?? document.querySelector("#category-view");
+  if (activePanel) {
+    activePanel.classList.remove("is-entering");
+    void activePanel.offsetWidth;
+    activePanel.classList.add("is-entering");
+    window.setTimeout(() => activePanel.classList.remove("is-entering"), 240);
+  }
   render();
 }
 
@@ -224,7 +232,7 @@ function checklistItem(item) {
 }
 
 function undoItem(itemId) {
-  return `<li class="undo-item"><span><strong>Producto marcado</strong><small>Se ha ocultado de la lista</small></span><button type="button" data-undo="${itemId}">Deshacer</button></li>`;
+  return `<li class="undo-item"><wa-animation name="fadeIn" duration="220" easing="cubic-bezier(.16, 1, .3, 1)" fill="both" play><span class="undo-symbol" aria-hidden="true">✓</span></wa-animation><span class="undo-copy"><strong>Producto marcado</strong><small>Se ha ocultado de la lista</small></span><button type="button" data-undo="${itemId}">Deshacer</button></li>`;
 }
 
 function renderCategory() {
