@@ -11,6 +11,7 @@ const storageKey = "trip-list-checked-v2";
 const completedVisibilityKey = "trip-list-show-completed-v1";
 const viewStorageKey = "trip-list-current-view-v1";
 const sectionStorageKey = "trip-list-current-section-v1";
+const badgePromptKey = "trip-list-badge-prompt-v1";
 const colorScheme = window.matchMedia("(prefers-color-scheme: dark)");
 const listDefinition = JSON.parse(document.querySelector("#list-definition").textContent);
 const checkedIds = loadCheckedIds();
@@ -70,6 +71,10 @@ const refs = {
   installButton: document.querySelector("#install-button"),
   installDialog: document.querySelector("#install-dialog"),
   closeInstall: document.querySelector("#close-install"),
+  badgeDialog: document.querySelector("#badge-dialog"),
+  badgeDialogMessage: document.querySelector("#badge-dialog-message"),
+  closeBadge: document.querySelector("#close-badge"),
+  requestBadge: document.querySelector("#request-badge"),
   updateBanner: document.querySelector("#update-banner"),
   reloadButton: document.querySelector("#reload-button"),
   quickActions: document.querySelector("#quick-actions"),
@@ -154,6 +159,37 @@ function updateConnectionStatus() {
   refs.connectionStatus.querySelector("span:last-child").textContent = online ? "Con conexión" : "Sin conexión · guardado local";
 }
 
+function isInstalledApp() {
+  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+}
+
+function canUseBadge() {
+  return isInstalledApp() && "setAppBadge" in navigator && "Notification" in window;
+}
+
+function updateAppBadge(pending) {
+  if (!canUseBadge() || Notification.permission !== "granted") return;
+  const update = pending > 0 ? navigator.setAppBadge?.(pending) : navigator.clearAppBadge?.();
+  update?.catch(() => {});
+}
+
+function updateBadgeDialog() {
+  const denied = "Notification" in window && Notification.permission === "denied";
+  refs.badgeDialogMessage.textContent = denied
+    ? "Las notificaciones están bloqueadas. Actívalas en Ajustes > Notificaciones > TripList para mostrar los globos."
+    : "TripList puede mostrar en su icono cuántas cosas quedan pendientes.";
+  refs.requestBadge.hidden = denied;
+}
+
+function maybePromptForBadgePermission() {
+  if (!canUseBadge() || Notification.permission === "granted" || sessionStorage.getItem(badgePromptKey)) return;
+  sessionStorage.setItem(badgePromptKey, "shown");
+  window.setTimeout(() => {
+    updateBadgeDialog();
+    refs.badgeDialog.open = true;
+  }, 500);
+}
+
 function activeSection() {
   return sections.find((section) => section.id === activeSectionId) ?? sections[0];
 }
@@ -229,6 +265,7 @@ function updateProgress() {
   refs.progressMessage.textContent = pending === 0 ? "Todo preparado para salir." : `${pending} ${pending === 1 ? "cosa pendiente" : "cosas pendientes"} para revisar.`;
   refs.overviewStatus.textContent = pending === 0 ? "Lista completa" : `${pending} pendientes`;
   refs.pendingStatus.textContent = searchTerm ? "Filtrando resultados" : `${pending} por revisar`;
+  updateAppBadge(pending);
 }
 
 function updateQuickActions() {
@@ -466,6 +503,16 @@ refs.closeInstall.addEventListener("click", () => {
   refs.installDialog.open = false;
 });
 
+refs.closeBadge.addEventListener("click", () => {
+  refs.badgeDialog.open = false;
+});
+
+refs.requestBadge.addEventListener("click", async () => {
+  const permission = await Notification.requestPermission();
+  updateBadgeDialog();
+  if (permission === "granted") updateAppBadge(totals().pending);
+});
+
 function showUpdateBanner(registration) {
   activeServiceWorkerRegistration = registration;
   refs.updateBanner.hidden = false;
@@ -512,3 +559,4 @@ window.addEventListener("online", updateConnectionStatus);
 window.addEventListener("offline", updateConnectionStatus);
 updateConnectionStatus();
 setView(currentView);
+maybePromptForBadgePermission();

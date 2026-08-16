@@ -151,7 +151,11 @@ h2 { margin-bottom: 0; font-size: clamp(1.7rem, 4vw, 2.25rem); letter-spacing: -
 .install-copy p { margin-bottom: 14px; }
 .install-copy ol { margin: 0; padding-left: 1.3rem; }
 .install-copy li + li { margin-top: 8px; }
+.badge-copy { color: var(--muted); line-height: 1.55; }
+.badge-copy p { margin-bottom: 12px; }
+.badge-copy .badge-note { margin-bottom: 0; font-size: .8rem; }
 #install-dialog { --width: min(100% - 32px, 430px); }
+#badge-dialog { --width: min(100% - 32px, 430px); }
 #reset-dialog { --width: min(100% - 32px, 430px); --show-duration: 180ms; --hide-duration: 140ms; }
 #reset-dialog::part(footer) { display: flex; justify-content: flex-end; gap: 8px; }
 button:focus-visible, input:focus-visible, wa-button:focus-visible, wa-checkbox:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 2px; }

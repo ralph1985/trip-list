@@ -7,6 +7,7 @@
     <meta name="description" content="Listas sencillas para no olvidar nada antes de viajar." />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <link rel="stylesheet" href="/styles.css" />
     <title>TripList · Antes de salir</title>
   </head>
@@ -120,6 +121,14 @@
         </ol>
       </div>
       <wa-button slot="footer" id="close-install" appearance="plain">Cerrar</wa-button>
+    </wa-dialog>
+    <wa-dialog id="badge-dialog" label="Activar globos" light-dismiss>
+      <div class="badge-copy">
+        <p id="badge-dialog-message">TripList puede mostrar en su icono cuántas cosas quedan pendientes.</p>
+        <p class="badge-note">Solo se actualizará cuando uses la app. No necesita servidor ni enviará notificaciones.</p>
+      </div>
+      <wa-button slot="footer" id="close-badge" appearance="plain">Ahora no</wa-button>
+      <wa-button slot="footer" id="request-badge" variant="brand">Permitir globos</wa-button>
     </wa-dialog>
     <nav class="mobile-nav" aria-label="Navegación principal">
       <button class="view-tab is-active" type="button" data-view="overview"><wa-icon name="table-cells-large" label="Resumen"></wa-icon><span>Resumen</span></button>
