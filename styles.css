@@ -29,10 +29,12 @@ h1 { margin-bottom: 8px; font-size: clamp(2.25rem, 8vw, 4.5rem); letter-spacing:
 .summary-line span:last-child { color: var(--accent); }
 .progress-track { height: 8px; overflow: hidden; border-radius: 99px; background: #e4e1d9; }
 .progress-bar { width: 0; height: 100%; border-radius: inherit; background: var(--accent); transition: width .25s ease; }
+.filter-button { margin-top: 13px; padding: 0; border: 0; color: var(--accent); background: transparent; font-size: .82rem; font-weight: 800; }
 .section-nav { display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px 34px; padding: 0 16px 6px; scrollbar-width: thin; }
 .section-tab { flex: 0 0 auto; padding: 9px 13px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: transparent; font-size: .87rem; white-space: nowrap; }
 .section-tab[aria-current="true"] { border-color: var(--accent); color: #fff; background: var(--accent); }
 .list-heading { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 14px; }
+.list-area { min-height: 440px; }
 .section-kicker { margin-bottom: 5px; color: var(--muted); font-size: .68rem; }
 h2 { margin-bottom: 0; font-size: 1.75rem; letter-spacing: -.04em; }
 .text-button { padding: 8px 0; border: 0; color: var(--accent); background: transparent; font-weight: 800; }

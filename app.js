@@ -11,6 +11,7 @@ let sections = listDefinition.map((section) => ({
   }))
 }));
 let activeSectionId = sections[0]?.id;
+let showCompleted = true;
 
 const sectionNav = document.querySelector("#section-nav");
 const checklist = document.querySelector("#checklist");
@@ -18,6 +19,7 @@ const sectionTitle = document.querySelector("#section-title");
 const progressLabel = document.querySelector("#progress-label");
 const progressPercent = document.querySelector("#progress-percent");
 const progressBar = document.querySelector("#progress-bar");
+const completedToggle = document.querySelector("#completed-toggle");
 
 function loadCheckedIds() {
   try {
@@ -42,11 +44,16 @@ function slugify(value) {
 function render() {
   const section = activeSection();
   activeSectionId = section?.id;
+  const navScrollLeft = sectionNav.scrollLeft;
   sectionNav.innerHTML = sections.map((item) => `<button class="section-tab" type="button" data-section="${item.id}" aria-current="${item.id === activeSectionId}">${item.name}</button>`).join("");
+  sectionNav.scrollLeft = navScrollLeft;
   sectionTitle.textContent = section?.name ?? "Lista";
-  checklist.innerHTML = section?.items.length
-    ? section.items.map((item) => `<li class="check-item"><input type="checkbox" id="item-${item.id}" data-item="${item.id}" ${item.done ? "checked" : ""} /><label for="item-${item.id}">${escapeHtml(item.label)}</label></li>`).join("")
-    : `<li class="empty">Esta sección está vacía por ahora.</li>`;
+  const visibleItems = section?.items.filter((item) => showCompleted || !item.done) ?? [];
+  checklist.innerHTML = visibleItems.length
+    ? visibleItems.map((item) => `<li class="check-item"><input type="checkbox" id="item-${item.id}" data-item="${item.id}" ${item.done ? "checked" : ""} /><label for="item-${item.id}">${escapeHtml(item.label)}</label></li>`).join("")
+    : `<li class="empty">${section?.items.length ? "No hay elementos pendientes en esta sección." : "Esta sección está vacía por ahora."}</li>`;
+  completedToggle.textContent = showCompleted ? "Ocultar completados" : "Mostrar completados";
+  completedToggle.setAttribute("aria-pressed", String(!showCompleted));
   updateProgress();
 }
 
@@ -74,6 +81,11 @@ checklist.addEventListener("change", (event) => {
   const item = activeSection().items.find((entry) => entry.id === input.dataset.item);
   if (item) item.done = input.checked;
   saveCheckedIds();
+  render();
+});
+
+completedToggle.addEventListener("click", () => {
+  showCompleted = !showCompleted;
   render();
 });
 
