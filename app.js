@@ -1,11 +1,11 @@
 const storageKey = "trip-list-checked-v1";
 const listDefinition = JSON.parse(document.querySelector("#list-definition").textContent);
 const checkedIds = loadCheckedIds();
-let sections = listDefinition.map((section, sectionIndex) => ({
+let sections = listDefinition.map((section) => ({
   ...section,
-  id: `section-${sectionIndex}`,
-  items: section.items.map((label, itemIndex) => ({
-    id: `${sectionIndex}-${itemIndex}`,
+  id: slugify(section.name),
+  items: section.items.map((label) => ({
+    id: `${slugify(section.name)}-${slugify(label)}`,
     label,
     done: checkedIds.has(`${sectionIndex}-${itemIndex}`)
   }))
@@ -34,6 +34,10 @@ function saveCheckedIds() {
 }
 
 function activeSection() { return sections.find((section) => section.id === activeSectionId) ?? sections[0]; }
+
+function slugify(value) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
 
 function render() {
   const section = activeSection();
