@@ -130,13 +130,14 @@ h2 { margin-bottom: 0; font-size: clamp(1.7rem, 4vw, 2.25rem); letter-spacing: -
 .site-footer { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 12px; color: var(--muted); font-size: .7rem; }
 .site-footer a { color: inherit; text-decoration-color: var(--line); text-underline-offset: 3px; }
 .site-footer a:hover { color: var(--accent-strong); text-decoration-color: currentColor; }
+.mobile-nav { display: none; }
 .dialog-copy { margin: 0; color: var(--muted); line-height: 1.55; }
 #reset-dialog { --width: min(100% - 32px, 430px); --show-duration: 180ms; --hide-duration: 140ms; }
 #reset-dialog::part(footer) { display: flex; justify-content: flex-end; gap: 8px; }
 button:focus-visible, input:focus-visible, wa-button:focus-visible, wa-checkbox:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 2px; }
 [hidden] { display: none !important; }
 @media (max-width: 720px) {
-  .app-shell { width: min(100% - 24px, 680px); padding-top: 28px; }
+  .app-shell { width: min(100% - 24px, 680px); padding-top: 28px; padding-bottom: calc(86px + env(safe-area-inset-bottom)); }
   .app-header { gap: 12px; }
   h1 { font-size: clamp(2.65rem, 14vw, 4.5rem); }
   .progress-panel { margin-top: 34px; padding: 18px; }
@@ -145,6 +146,10 @@ button:focus-visible, input:focus-visible, wa-button:focus-visible, wa-checkbox:
   .category-row { grid-template-columns: 1fr auto; gap: 8px 14px; }
   .category-row-progress { grid-column: 1 / 2; }
   .category-row .category-arrow { grid-column: 2; grid-row: 1 / span 2; }
+  .mobile-nav { position: fixed; right: 0; bottom: 0; left: 0; z-index: 20; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: color-mix(in srgb, var(--paper) 94%, transparent); box-shadow: 0 -10px 24px -20px var(--ink); }
+  .mobile-nav .view-tab { position: relative; display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 44px; padding: 7px 4px; font-size: .72rem; }
+  .mobile-nav .view-tab wa-icon { font-size: 1rem; }
+  .mobile-nav .tab-count { position: absolute; top: 3px; right: 18%; min-width: 1.1rem; height: 1.1rem; font-size: .62rem; }
 }
 @media (max-width: 460px) {
   .app-shell { width: min(100% - 20px, 680px); }

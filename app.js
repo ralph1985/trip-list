@@ -53,6 +53,7 @@ const refs = {
   categoriesList: document.querySelector("#categories-list"),
   pendingList: document.querySelector("#pending-list"),
   pendingCount: document.querySelector("#pending-count"),
+  mobilePendingCount: document.querySelector("#mobile-pending-count"),
   overviewStatus: document.querySelector("#overview-status"),
   pendingStatus: document.querySelector("#pending-status"),
   searchInput: document.querySelector("#search-input"),
@@ -161,7 +162,7 @@ function setView(view) {
   currentView = view;
   saveNavigation();
   document.querySelectorAll(".view-tab").forEach((tab) => {
-    const active = tab.dataset.view === view;
+    const active = tab.dataset.view === view || (view === "category" && tab.dataset.view === "categories");
     tab.classList.toggle("is-active", active);
     tab.setAttribute("aria-current", active ? "page" : "false");
   });
@@ -186,6 +187,7 @@ function updateProgress() {
   refs.progressBar.value = percent;
   refs.progressBar.label = `Progreso: ${percent}%`;
   refs.pendingCount.textContent = pending;
+  refs.mobilePendingCount.textContent = pending;
   refs.progressMessage.textContent = pending === 0 ? "Todo preparado para salir." : `${pending} ${pending === 1 ? "cosa pendiente" : "cosas pendientes"} para revisar.`;
   refs.overviewStatus.textContent = pending === 0 ? "Lista completa" : `${pending} pendientes`;
   refs.pendingStatus.textContent = searchTerm ? "Filtrando resultados" : `${pending} por revisar`;
