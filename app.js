@@ -35,6 +35,8 @@ let currentView = loadCurrentView();
 let activeSectionId = loadCurrentSection();
 let showCompleted = loadShowCompleted();
 let searchTerm = "";
+let undoTarget = null;
+let undoTimer;
 
 const refs = {
   checklist: document.querySelector("#checklist"),
@@ -98,6 +100,15 @@ function loadCurrentSection() {
 function saveNavigation() {
   localStorage.setItem(viewStorageKey, currentView);
   if (activeSectionId) localStorage.setItem(sectionStorageKey, activeSectionId);
+}
+
+function setUndoTarget(sectionId, itemId) {
+  undoTarget = { sectionId, itemId };
+  window.clearTimeout(undoTimer);
+  undoTimer = window.setTimeout(() => {
+    undoTarget = null;
+    render();
+  }, 6000);
 }
 
 function saveCheckedIds() {
@@ -183,17 +194,24 @@ function renderPending() {
   const normalizedSearch = searchTerm.trim().toLocaleLowerCase();
   const groups = sections.map((section) => ({
     section,
-    items: section.items.filter((item) => (!item.done || showCompleted) && (!normalizedSearch || item.label.toLocaleLowerCase().includes(normalizedSearch) || section.name.toLocaleLowerCase().includes(normalizedSearch)))
+    items: section.items.filter((item) => {
+      const isUndoTarget = undoTarget?.sectionId === section.id && undoTarget.itemId === item.id;
+      return ((!item.done || showCompleted) || (!showCompleted && isUndoTarget)) && (!normalizedSearch || item.label.toLocaleLowerCase().includes(normalizedSearch) || section.name.toLocaleLowerCase().includes(normalizedSearch));
+    })
   })).filter(({ items }) => items.length);
 
   refs.clearSearch.hidden = !searchTerm;
   refs.pendingList.innerHTML = groups.length
-    ? groups.map(({ section, items }) => `<section class="pending-group"><div class="pending-group-heading"><h3>${escapeHtml(section.name)}</h3><button type="button" data-open-section="${section.id}">Ver sección →</button></div><ul class="checklist">${items.map((item) => checklistItem(item)).join("")}</ul></section>`).join("")
+    ? groups.map(({ section, items }) => `<section class="pending-group"><div class="pending-group-heading"><h3>${escapeHtml(section.name)}</h3><button type="button" data-open-section="${section.id}">Ver sección →</button></div><ul class="checklist">${items.map((item) => undoTarget?.sectionId === section.id && undoTarget.itemId === item.id ? undoItem() : checklistItem(item)).join("")}</ul></section>`).join("")
     : `<div class="empty-state"><span class="empty-symbol">✓</span><strong>${searchTerm ? "No hemos encontrado nada" : "No quedan pendientes"}</strong><p>${searchTerm ? "Prueba con otra palabra." : "La lista está completa. Buen viaje."}</p></div>`;
 }
 
 function checklistItem(item) {
   return `<li class="check-item ${item.done ? "is-done" : ""}"><wa-checkbox data-item="${item.id}" ${item.done ? "checked" : ""}>${escapeHtml(item.label)}</wa-checkbox></li>`;
+}
+
+function undoItem() {
+  return `<li class="undo-item"><span><strong>Producto marcado</strong><small>Se ha ocultado de la lista</small></span><button type="button" data-undo>Deshacer</button></li>`;
 }
 
 function renderCategory() {
@@ -204,8 +222,11 @@ function renderCategory() {
   const allDone = progress.total > 0 && progress.pending === 0;
   refs.sectionToggle.textContent = allDone ? "Desmarcar todo" : "Marcar todo";
   refs.sectionToggle.setAttribute("aria-label", `${allDone ? "Desmarcar" : "Marcar"} todos los elementos de ${section.name}`);
-  const items = section.items.filter((item) => showCompleted || !item.done);
-  refs.checklist.innerHTML = items.length ? items.map(checklistItem).join("") : `<li class="empty-state compact"><strong>${section.items.length ? "No hay elementos pendientes" : "Esta sección está vacía"}</strong><p>${section.items.length ? "Puedes volver a mostrar los completados." : ""}</p></li>`;
+  const items = section.items.filter((item) => {
+    const isUndoTarget = undoTarget?.sectionId === section.id && undoTarget.itemId === item.id;
+    return showCompleted || !item.done || isUndoTarget;
+  });
+  refs.checklist.innerHTML = items.length ? items.map((item) => undoTarget?.sectionId === section.id && undoTarget.itemId === item.id ? undoItem() : checklistItem(item)).join("") : `<li class="empty-state compact"><strong>${section.items.length ? "No hay elementos pendientes" : "Esta sección está vacía"}</strong><p>${section.items.length ? "Puedes volver a mostrar los completados." : ""}</p></li>`;
 }
 
 function render() {
@@ -221,6 +242,18 @@ function render() {
 document.querySelectorAll(".view-tab").forEach((tab) => tab.addEventListener("click", () => setView(tab.dataset.view)));
 
 document.addEventListener("click", (event) => {
+  const undoButton = event.target.closest("[data-undo]");
+  if (undoButton && undoTarget) {
+    const item = sections.flatMap((section) => section.items).find((entry) => entry.id === undoTarget.itemId);
+    if (item) {
+      item.done = false;
+      saveCheckedIds();
+    }
+    window.clearTimeout(undoTimer);
+    undoTarget = null;
+    render();
+    return;
+  }
   const openButton = event.target.closest("[data-open-section]");
   if (openButton) {
     activeSectionId = openButton.dataset.openSection;
@@ -235,13 +268,21 @@ function toggleItem(checkbox) {
   if (!checkbox) return;
   const item = sections.flatMap((section) => section.items).find((entry) => entry.id === checkbox.dataset.item);
   if (!item) return;
+  const section = sections.find((entry) => entry.items.some((entryItem) => entryItem.id === item.id));
   item.done = checkbox.checked;
+  if (item.done && !showCompleted && section) setUndoTarget(section.id, item.id);
+  if (!item.done && undoTarget?.itemId === item.id) {
+    window.clearTimeout(undoTimer);
+    undoTarget = null;
+  }
   saveCheckedIds();
   render();
 }
 
 refs.completedToggle.addEventListener("click", () => {
   showCompleted = !showCompleted;
+  window.clearTimeout(undoTimer);
+  undoTarget = null;
   saveShowCompleted();
   render();
 });

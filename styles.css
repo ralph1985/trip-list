@@ -95,6 +95,11 @@ h2 { margin-bottom: 0; font-size: clamp(1.7rem, 4vw, 2.25rem); letter-spacing: -
 .check-item wa-checkbox { width: 100%; }
 .check-item wa-checkbox::part(label) { line-height: 1.3; }
 .check-item.is-done wa-checkbox { color: var(--muted); }
+.undo-item { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 56px; padding: 10px 14px; border: 1px dashed var(--accent); border-radius: 11px; color: var(--accent-strong); background: var(--accent-soft); }
+.undo-item span { display: flex; flex-direction: column; gap: 3px; }
+.undo-item strong { font-size: .86rem; }
+.undo-item small { color: var(--muted); font-size: .72rem; }
+.undo-item button { flex: 0 0 auto; padding: 6px 0; border: 0; color: var(--accent-strong); background: transparent; font-size: .78rem; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
 .categories-list { border-top: 1px solid var(--line); }
 .category-row { display: grid; grid-template-columns: 1fr 190px auto; align-items: center; gap: 20px; width: 100%; padding: 16px 4px; border: 0; border-bottom: 1px solid var(--line); color: var(--ink); text-align: left; background: transparent; }
 .category-row:hover { color: var(--accent-strong); background: var(--wash); }
