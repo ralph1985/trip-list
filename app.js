@@ -35,8 +35,8 @@ let currentView = loadCurrentView();
 let activeSectionId = loadCurrentSection();
 let showCompleted = loadShowCompleted();
 let searchTerm = "";
-let undoTarget = null;
-let undoTimer;
+const undoTargets = new Map();
+const undoTimers = new Map();
 
 const refs = {
   checklist: document.querySelector("#checklist"),
@@ -103,12 +103,25 @@ function saveNavigation() {
 }
 
 function setUndoTarget(sectionId, itemId) {
-  undoTarget = { sectionId, itemId };
-  window.clearTimeout(undoTimer);
-  undoTimer = window.setTimeout(() => {
-    undoTarget = null;
-    render();
-  }, 6000);
+  removeUndoTarget(itemId, false);
+  undoTargets.set(itemId, { sectionId, itemId });
+  undoTimers.set(itemId, window.setTimeout(() => {
+    removeUndoTarget(itemId);
+  }, 6000));
+}
+
+function removeUndoTarget(itemId, shouldRender = true) {
+  const timer = undoTimers.get(itemId);
+  if (timer) window.clearTimeout(timer);
+  undoTimers.delete(itemId);
+  undoTargets.delete(itemId);
+  if (shouldRender) render();
+}
+
+function clearUndoTargets() {
+  undoTimers.forEach((timer) => window.clearTimeout(timer));
+  undoTimers.clear();
+  undoTargets.clear();
 }
 
 function saveCheckedIds() {
@@ -195,14 +208,14 @@ function renderPending() {
   const groups = sections.map((section) => ({
     section,
     items: section.items.filter((item) => {
-      const isUndoTarget = undoTarget?.sectionId === section.id && undoTarget.itemId === item.id;
+      const isUndoTarget = undoTargets.has(item.id);
       return ((!item.done || showCompleted) || (!showCompleted && isUndoTarget)) && (!normalizedSearch || item.label.toLocaleLowerCase().includes(normalizedSearch) || section.name.toLocaleLowerCase().includes(normalizedSearch));
     })
   })).filter(({ items }) => items.length);
 
   refs.clearSearch.hidden = !searchTerm;
   refs.pendingList.innerHTML = groups.length
-    ? groups.map(({ section, items }) => `<section class="pending-group"><div class="pending-group-heading"><h3>${escapeHtml(section.name)}</h3><button type="button" data-open-section="${section.id}">Ver sección →</button></div><ul class="checklist">${items.map((item) => undoTarget?.sectionId === section.id && undoTarget.itemId === item.id ? undoItem() : checklistItem(item)).join("")}</ul></section>`).join("")
+    ? groups.map(({ section, items }) => `<section class="pending-group"><div class="pending-group-heading"><h3>${escapeHtml(section.name)}</h3><button type="button" data-open-section="${section.id}">Ver sección →</button></div><ul class="checklist">${items.map((item) => undoTargets.has(item.id) ? undoItem(item.id) : checklistItem(item)).join("")}</ul></section>`).join("")
     : `<div class="empty-state"><span class="empty-symbol">✓</span><strong>${searchTerm ? "No hemos encontrado nada" : "No quedan pendientes"}</strong><p>${searchTerm ? "Prueba con otra palabra." : "La lista está completa. Buen viaje."}</p></div>`;
 }
 
@@ -210,8 +223,8 @@ function checklistItem(item) {
   return `<li class="check-item ${item.done ? "is-done" : ""}"><wa-checkbox data-item="${item.id}" ${item.done ? "checked" : ""}>${escapeHtml(item.label)}</wa-checkbox></li>`;
 }
 
-function undoItem() {
-  return `<li class="undo-item"><span><strong>Producto marcado</strong><small>Se ha ocultado de la lista</small></span><button type="button" data-undo>Deshacer</button></li>`;
+function undoItem(itemId) {
+  return `<li class="undo-item"><span><strong>Producto marcado</strong><small>Se ha ocultado de la lista</small></span><button type="button" data-undo="${itemId}">Deshacer</button></li>`;
 }
 
 function renderCategory() {
@@ -223,10 +236,10 @@ function renderCategory() {
   refs.sectionToggle.textContent = allDone ? "Desmarcar todo" : "Marcar todo";
   refs.sectionToggle.setAttribute("aria-label", `${allDone ? "Desmarcar" : "Marcar"} todos los elementos de ${section.name}`);
   const items = section.items.filter((item) => {
-    const isUndoTarget = undoTarget?.sectionId === section.id && undoTarget.itemId === item.id;
+    const isUndoTarget = undoTargets.has(item.id);
     return showCompleted || !item.done || isUndoTarget;
   });
-  refs.checklist.innerHTML = items.length ? items.map((item) => undoTarget?.sectionId === section.id && undoTarget.itemId === item.id ? undoItem() : checklistItem(item)).join("") : `<li class="empty-state compact"><strong>${section.items.length ? "No hay elementos pendientes" : "Esta sección está vacía"}</strong><p>${section.items.length ? "Puedes volver a mostrar los completados." : ""}</p></li>`;
+  refs.checklist.innerHTML = items.length ? items.map((item) => undoTargets.has(item.id) ? undoItem(item.id) : checklistItem(item)).join("") : `<li class="empty-state compact"><strong>${section.items.length ? "No hay elementos pendientes" : "Esta sección está vacía"}</strong><p>${section.items.length ? "Puedes volver a mostrar los completados." : ""}</p></li>`;
 }
 
 function render() {
@@ -243,15 +256,13 @@ document.querySelectorAll(".view-tab").forEach((tab) => tab.addEventListener("cl
 
 document.addEventListener("click", (event) => {
   const undoButton = event.target.closest("[data-undo]");
-  if (undoButton && undoTarget) {
-    const item = sections.flatMap((section) => section.items).find((entry) => entry.id === undoTarget.itemId);
+  if (undoButton && undoTargets.has(undoButton.dataset.undo)) {
+    const item = sections.flatMap((section) => section.items).find((entry) => entry.id === undoButton.dataset.undo);
     if (item) {
       item.done = false;
       saveCheckedIds();
     }
-    window.clearTimeout(undoTimer);
-    undoTarget = null;
-    render();
+    removeUndoTarget(undoButton.dataset.undo);
     return;
   }
   const openButton = event.target.closest("[data-open-section]");
@@ -271,18 +282,14 @@ function toggleItem(checkbox) {
   const section = sections.find((entry) => entry.items.some((entryItem) => entryItem.id === item.id));
   item.done = checkbox.checked;
   if (item.done && !showCompleted && section) setUndoTarget(section.id, item.id);
-  if (!item.done && undoTarget?.itemId === item.id) {
-    window.clearTimeout(undoTimer);
-    undoTarget = null;
-  }
+  if (!item.done) removeUndoTarget(item.id, false);
   saveCheckedIds();
   render();
 }
 
 refs.completedToggle.addEventListener("click", () => {
   showCompleted = !showCompleted;
-  window.clearTimeout(undoTimer);
-  undoTarget = null;
+  clearUndoTargets();
   saveShowCompleted();
   render();
 });
