@@ -39,6 +39,7 @@ let showCompleted = loadShowCompleted();
 let searchTerm = "";
 const undoTargets = new Map();
 const undoTimers = new Map();
+let deferredInstallPrompt = null;
 
 const refs = {
   checklist: document.querySelector("#checklist"),
@@ -61,7 +62,10 @@ const refs = {
   resetDialog: document.querySelector("#reset-dialog"),
   cancelReset: document.querySelector("#cancel-reset"),
   confirmReset: document.querySelector("#confirm-reset"),
-  connectionStatus: document.querySelector("#connection-status")
+  connectionStatus: document.querySelector("#connection-status"),
+  installButton: document.querySelector("#install-button"),
+  installDialog: document.querySelector("#install-dialog"),
+  closeInstall: document.querySelector("#close-install")
 };
 
 function loadCheckedIds() {
@@ -386,6 +390,39 @@ document.querySelector("#reset-button").addEventListener("click", () => {
 refs.cancelReset.addEventListener("click", () => {
   refs.resetDialog.open = false;
 });
+
+function showInstallButton(label = "Instalar") {
+  refs.installButton.textContent = label;
+  refs.installButton.hidden = false;
+}
+
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  showInstallButton();
+});
+
+refs.installButton.addEventListener("click", async () => {
+  if (!deferredInstallPrompt) {
+    refs.installDialog.open = true;
+    return;
+  }
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  refs.installButton.hidden = true;
+});
+
+refs.closeInstall.addEventListener("click", () => {
+  refs.installDialog.open = false;
+});
+
+window.addEventListener("appinstalled", () => {
+  deferredInstallPrompt = null;
+  refs.installButton.hidden = true;
+});
+
+if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !window.navigator.standalone) showInstallButton("Cómo instalar");
 
 refs.confirmReset.addEventListener("click", () => {
   refs.resetDialog.open = false;

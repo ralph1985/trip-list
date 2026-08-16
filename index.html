@@ -18,9 +18,12 @@
           <h1>Antes de salir<span class="title-mark">.</span></h1>
           <p class="intro">Todo lo que conviene revisar antes de cerrar la puerta.</p>
         </div>
-        <wa-button id="reset-button" appearance="plain" circle size="m" title="Desmarcar toda la lista" aria-label="Desmarcar toda la lista">
-          <wa-icon name="rotate-left" label="Desmarcar toda la lista"></wa-icon>
-        </wa-button>
+        <div class="header-actions">
+          <wa-button id="install-button" appearance="plain" variant="brand" size="s" hidden>Instalar</wa-button>
+          <wa-button id="reset-button" appearance="plain" circle size="m" title="Desmarcar toda la lista" aria-label="Desmarcar toda la lista">
+            <wa-icon name="rotate-left" label="Desmarcar toda la lista"></wa-icon>
+          </wa-button>
+        </div>
       </header>
       <p id="connection-status" class="connection-status" role="status"><span class="connection-dot" aria-hidden="true"></span><span>Con conexión</span></p>
 
@@ -106,6 +109,17 @@
       <p class="dialog-copy">Se quitarán todas las marcas de completado. Esta acción no se puede deshacer.</p>
       <wa-button slot="footer" id="cancel-reset" appearance="plain">Cancelar</wa-button>
       <wa-button slot="footer" id="confirm-reset" variant="danger">Desmarcar todo</wa-button>
+    </wa-dialog>
+    <wa-dialog id="install-dialog" label="Instalar TripList" light-dismiss>
+      <div class="install-copy">
+        <p>Instala TripList para abrirla como una app y tenerla disponible sin conexión.</p>
+        <ol>
+          <li>Pulsa el botón de compartir del navegador.</li>
+          <li>Elige <strong>Añadir a pantalla de inicio</strong>.</li>
+          <li>Confirma con <strong>Añadir</strong>.</li>
+        </ol>
+      </div>
+      <wa-button slot="footer" id="close-install" appearance="plain">Cerrar</wa-button>
     </wa-dialog>
     <nav class="mobile-nav" aria-label="Navegación principal">
       <button class="view-tab is-active" type="button" data-view="overview"><wa-icon name="grid-2" label="Resumen"></wa-icon><span>Resumen</span></button>
