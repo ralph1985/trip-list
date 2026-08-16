@@ -40,6 +40,8 @@ let searchTerm = "";
 const undoTargets = new Map();
 const undoTimers = new Map();
 let deferredInstallPrompt = null;
+let activeServiceWorkerRegistration = null;
+let isReloadingForUpdate = false;
 
 const refs = {
   checklist: document.querySelector("#checklist"),
@@ -65,7 +67,9 @@ const refs = {
   connectionStatus: document.querySelector("#connection-status"),
   installButton: document.querySelector("#install-button"),
   installDialog: document.querySelector("#install-dialog"),
-  closeInstall: document.querySelector("#close-install")
+  closeInstall: document.querySelector("#close-install"),
+  updateBanner: document.querySelector("#update-banner"),
+  reloadButton: document.querySelector("#reload-button")
 };
 
 function loadCheckedIds() {
@@ -417,6 +421,18 @@ refs.closeInstall.addEventListener("click", () => {
   refs.installDialog.open = false;
 });
 
+function showUpdateBanner(registration) {
+  activeServiceWorkerRegistration = registration;
+  refs.updateBanner.hidden = false;
+}
+
+refs.reloadButton.addEventListener("click", () => {
+  const waitingWorker = activeServiceWorkerRegistration?.waiting;
+  if (!waitingWorker) return window.location.reload();
+  isReloadingForUpdate = true;
+  waitingWorker.postMessage({ type: "SKIP_WAITING" });
+});
+
 window.addEventListener("appinstalled", () => {
   deferredInstallPrompt = null;
   refs.installButton.hidden = true;
@@ -431,7 +447,22 @@ refs.confirmReset.addEventListener("click", () => {
   render();
 });
 
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (isReloadingForUpdate) window.location.reload();
+  });
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").then((registration) => {
+      if (registration.waiting && navigator.serviceWorker.controller) showUpdateBanner(registration);
+      registration.addEventListener("updatefound", () => {
+        const installingWorker = registration.installing;
+        installingWorker?.addEventListener("statechange", () => {
+          if (installingWorker.state === "installed" && navigator.serviceWorker.controller) showUpdateBanner(registration);
+        });
+      });
+    });
+  });
+}
 window.addEventListener("online", updateConnectionStatus);
 window.addEventListener("offline", updateConnectionStatus);
 updateConnectionStatus();

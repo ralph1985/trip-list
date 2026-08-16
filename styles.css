@@ -136,6 +136,8 @@ h2 { margin-bottom: 0; font-size: clamp(1.7rem, 4vw, 2.25rem); letter-spacing: -
 .site-footer a { color: inherit; text-decoration-color: var(--line); text-underline-offset: 3px; }
 .site-footer a:hover { color: var(--accent-strong); text-decoration-color: currentColor; }
 .mobile-nav { display: none; }
+.update-banner { position: fixed; right: 16px; bottom: 16px; z-index: 30; display: flex; align-items: center; gap: 14px; max-width: min(100% - 32px, 390px); padding: 12px 14px; border: 1px solid var(--accent); border-radius: 12px; color: var(--ink); background: var(--paper); box-shadow: var(--shadow); font-size: .8rem; }
+.update-banner button { padding: 5px 0; border: 0; color: var(--accent-strong); background: transparent; font-size: .78rem; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
 .dialog-copy { margin: 0; color: var(--muted); line-height: 1.55; }
 .install-copy { color: var(--muted); line-height: 1.55; }
 .install-copy p { margin-bottom: 14px; }
@@ -160,6 +162,7 @@ button:focus-visible, input:focus-visible, wa-button:focus-visible, wa-checkbox:
   .mobile-nav .view-tab { position: relative; display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 44px; padding: 7px 4px; font-size: .72rem; }
   .mobile-nav .view-tab wa-icon { font-size: 1rem; }
   .mobile-nav .tab-count { position: absolute; top: 3px; right: 18%; min-width: 1.1rem; height: 1.1rem; font-size: .62rem; }
+  .update-banner { right: 12px; bottom: calc(78px + env(safe-area-inset-bottom)); left: 12px; max-width: none; justify-content: space-between; }
 }
 @media (max-width: 460px) {
   .app-shell { width: min(100% - 20px, 680px); }
