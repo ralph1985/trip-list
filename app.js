@@ -6,6 +6,7 @@ import "@awesome.me/webawesome/dist/components/icon/icon.js";
 import "@awesome.me/webawesome/dist/components/progress-bar/progress-bar.js";
 
 const storageKey = "trip-list-checked-v2";
+const completedVisibilityKey = "trip-list-show-completed-v1";
 const colorScheme = window.matchMedia("(prefers-color-scheme: dark)");
 const listDefinition = JSON.parse(document.querySelector("#list-definition").textContent);
 const checkedIds = loadCheckedIds();
@@ -30,7 +31,7 @@ let sections = listDefinition.map((section) => ({
 
 let currentView = "overview";
 let activeSectionId = sections[0]?.id;
-let showCompleted = true;
+let showCompleted = loadShowCompleted();
 let searchTerm = "";
 
 const refs = {
@@ -59,6 +60,19 @@ function loadCheckedIds() {
   } catch {
     return new Set();
   }
+}
+
+function loadShowCompleted() {
+  try {
+    const saved = localStorage.getItem(completedVisibilityKey);
+    return saved === null ? true : saved === "true";
+  } catch {
+    return true;
+  }
+}
+
+function saveShowCompleted() {
+  localStorage.setItem(completedVisibilityKey, String(showCompleted));
 }
 
 function saveCheckedIds() {
@@ -170,6 +184,8 @@ function renderCategory() {
 
 function render() {
   updateProgress();
+  refs.completedToggle.textContent = showCompleted ? "Ocultar completados" : "Mostrar completados";
+  refs.completedToggle.setAttribute("aria-pressed", String(!showCompleted));
   renderOverview();
   renderCategories();
   renderPending();
@@ -200,8 +216,7 @@ function toggleItem(checkbox) {
 
 refs.completedToggle.addEventListener("click", () => {
   showCompleted = !showCompleted;
-  refs.completedToggle.textContent = showCompleted ? "Ocultar completados" : "Mostrar completados";
-  refs.completedToggle.setAttribute("aria-pressed", String(!showCompleted));
+  saveShowCompleted();
   render();
 });
 
