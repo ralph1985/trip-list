@@ -101,6 +101,11 @@
         <a href="https://conquense.dev" target="_blank" rel="noopener noreferrer">Web hecha por conquense.dev</a>
       </footer>
     </main>
+    <wa-dialog id="reset-dialog" label="Desmarcar toda la lista" light-dismiss>
+      <p class="dialog-copy">Se quitarán todas las marcas de completado. Esta acción no se puede deshacer.</p>
+      <wa-button slot="footer" id="cancel-reset" appearance="plain">Cancelar</wa-button>
+      <wa-button slot="footer" id="confirm-reset" variant="danger">Desmarcar todo</wa-button>
+    </wa-dialog>
     <script id="list-definition" type="application/json">
       [
         {"name":"Otros","items":["Bolsa de plástico","Botella agua Decathlon"]},

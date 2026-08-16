@@ -5,6 +5,7 @@ import "@awesome.me/webawesome/dist/components/checkbox/checkbox.js";
 import "@awesome.me/webawesome/dist/components/icon/icon.js";
 import "@awesome.me/webawesome/dist/components/progress-bar/progress-bar.js";
 import "@awesome.me/webawesome/dist/components/animation/animation.js";
+import "@awesome.me/webawesome/dist/components/dialog/dialog.js";
 
 const storageKey = "trip-list-checked-v2";
 const completedVisibilityKey = "trip-list-show-completed-v1";
@@ -55,7 +56,10 @@ const refs = {
   overviewStatus: document.querySelector("#overview-status"),
   pendingStatus: document.querySelector("#pending-status"),
   searchInput: document.querySelector("#search-input"),
-  clearSearch: document.querySelector("#clear-search")
+  clearSearch: document.querySelector("#clear-search"),
+  resetDialog: document.querySelector("#reset-dialog"),
+  cancelReset: document.querySelector("#cancel-reset"),
+  confirmReset: document.querySelector("#confirm-reset")
 };
 
 function loadCheckedIds() {
@@ -324,7 +328,15 @@ refs.clearSearch.addEventListener("click", () => {
 });
 
 document.querySelector("#reset-button").addEventListener("click", () => {
-  if (!window.confirm("¿Desmarcar toda la lista?")) return;
+  refs.resetDialog.open = true;
+});
+
+refs.cancelReset.addEventListener("click", () => {
+  refs.resetDialog.open = false;
+});
+
+refs.confirmReset.addEventListener("click", () => {
+  refs.resetDialog.open = false;
   sections.forEach((section) => section.items.forEach((item) => { item.done = false; }));
   saveCheckedIds();
   render();
