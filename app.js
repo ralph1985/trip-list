@@ -20,6 +20,7 @@ const progressLabel = document.querySelector("#progress-label");
 const progressPercent = document.querySelector("#progress-percent");
 const progressBar = document.querySelector("#progress-bar");
 const completedToggle = document.querySelector("#completed-toggle");
+const sectionToggle = document.querySelector("#section-toggle");
 
 function loadCheckedIds() {
   try {
@@ -51,6 +52,12 @@ function render() {
     button.setAttribute("aria-current", String(button.dataset.section === activeSectionId));
   });
   sectionTitle.textContent = section?.name ?? "Todo listo";
+  sectionToggle.hidden = !section;
+  if (section) {
+    const allDone = section.items.length > 0 && section.items.every((item) => item.done);
+    sectionToggle.textContent = allDone ? "Desmarcar todo" : "Marcar todo";
+    sectionToggle.setAttribute("aria-label", `${allDone ? "Desmarcar" : "Marcar"} todos los elementos de ${section.name}`);
+  }
   const visibleItems = section?.items.filter((item) => showCompleted || !item.done) ?? [];
   checklist.innerHTML = visibleItems.length
     ? visibleItems.map((item) => `<li class="check-item"><input type="checkbox" id="item-${item.id}" data-item="${item.id}" ${item.done ? "checked" : ""} /><label for="item-${item.id}">${escapeHtml(item.label)}</label></li>`).join("")
@@ -89,6 +96,15 @@ checklist.addEventListener("change", (event) => {
 
 completedToggle.addEventListener("click", () => {
   showCompleted = !showCompleted;
+  render();
+});
+
+sectionToggle.addEventListener("click", () => {
+  const section = activeSection();
+  if (!section) return;
+  const allDone = section.items.length > 0 && section.items.every((item) => item.done);
+  section.items.forEach((item) => { item.done = !allDone; });
+  saveCheckedIds();
   render();
 });
 
