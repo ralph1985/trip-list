@@ -71,7 +71,10 @@ const refs = {
   installDialog: document.querySelector("#install-dialog"),
   closeInstall: document.querySelector("#close-install"),
   updateBanner: document.querySelector("#update-banner"),
-  reloadButton: document.querySelector("#reload-button")
+  reloadButton: document.querySelector("#reload-button"),
+  quickActions: document.querySelector("#quick-actions"),
+  quickCompletedToggle: document.querySelector("#quick-completed-toggle"),
+  quickSectionToggle: document.querySelector("#quick-section-toggle")
 };
 
 function loadCheckedIds() {
@@ -229,6 +232,22 @@ function updateProgress() {
   refs.pendingStatus.textContent = searchTerm ? "Filtrando resultados" : `${pending} por revisar`;
 }
 
+function updateQuickActions() {
+  const actionLabel = showCompleted ? "Ocultar completados" : "Mostrar completados";
+  refs.quickCompletedToggle.querySelector("span").textContent = actionLabel;
+  refs.quickCompletedToggle.querySelector("wa-icon").setAttribute("label", actionLabel);
+  refs.quickSectionToggle.hidden = currentView !== "category";
+  if (currentView === "category") {
+    const section = activeSection();
+    const allDone = section && section.items.length > 0 && section.items.every((item) => item.done);
+    refs.quickSectionToggle.querySelector("span").textContent = allDone ? "Desmarcar categoría" : "Marcar categoría";
+  }
+}
+
+function tactileFeedback(duration = 8) {
+  if (!reducedMotion.matches && typeof navigator.vibrate === "function") navigator.vibrate(duration);
+}
+
 function renderOverview() {
   refs.overviewGrid.innerHTML = sections.map((section, index) => {
     const progress = sectionProgress(section);
@@ -297,6 +316,7 @@ function render() {
   updateProgress();
   refs.completedToggle.textContent = showCompleted ? "Ocultar completados" : "Mostrar completados";
   refs.completedToggle.setAttribute("aria-pressed", String(!showCompleted));
+  updateQuickActions();
   renderOverview();
   renderCategories();
   renderPending();
@@ -377,15 +397,20 @@ function toggleItem(checkbox) {
   if (item.done && !showCompleted && section) setUndoTarget(section.id, item.id);
   if (!item.done) removeUndoTarget(item.id, false);
   saveCheckedIds();
+  tactileFeedback(item.done ? 8 : 5);
   updateVisibleItem(item, section);
 }
 
-refs.completedToggle.addEventListener("click", () => {
+function toggleCompletedVisibility() {
   showCompleted = !showCompleted;
   clearUndoTargets();
   saveShowCompleted();
   render();
-});
+}
+
+refs.completedToggle.addEventListener("click", toggleCompletedVisibility);
+refs.quickCompletedToggle.addEventListener("click", toggleCompletedVisibility);
+refs.quickSectionToggle.addEventListener("click", () => refs.sectionToggle.click());
 
 refs.sectionToggle.addEventListener("click", () => {
   const section = activeSection();
@@ -393,6 +418,7 @@ refs.sectionToggle.addEventListener("click", () => {
   const allDone = section.items.length > 0 && section.items.every((item) => item.done);
   section.items.forEach((item) => { item.done = !allDone; });
   saveCheckedIds();
+  tactileFeedback(12);
   render();
 });
 
