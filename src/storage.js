@@ -6,6 +6,14 @@ export const storageKeys = {
   badgePrompt: "trip-list-badge-prompt-v1"
 };
 
+function saveValue(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Algunos navegadores bloquean el almacenamiento o agotan su cuota.
+  }
+}
+
 export function loadCheckedIds() {
   try {
     const saved = JSON.parse(localStorage.getItem(storageKeys.checked));
@@ -17,7 +25,7 @@ export function loadCheckedIds() {
 
 export function saveCheckedIds(sections) {
   const checked = sections.flatMap((section) => section.items).filter((item) => item.done).map((item) => item.id);
-  localStorage.setItem(storageKeys.checked, JSON.stringify(checked));
+  saveValue(storageKeys.checked, JSON.stringify(checked));
 }
 
 export function loadShowCompleted() {
@@ -30,7 +38,7 @@ export function loadShowCompleted() {
 }
 
 export function saveShowCompleted(value) {
-  localStorage.setItem(storageKeys.completedVisibility, String(value));
+  saveValue(storageKeys.completedVisibility, String(value));
 }
 
 export function loadCurrentView() {
@@ -52,6 +60,6 @@ export function loadCurrentSection(sections) {
 }
 
 export function saveNavigation(view, sectionId) {
-  localStorage.setItem(storageKeys.currentView, view);
-  if (sectionId) localStorage.setItem(storageKeys.currentSection, sectionId);
+  saveValue(storageKeys.currentView, view);
+  if (sectionId) saveValue(storageKeys.currentSection, sectionId);
 }
