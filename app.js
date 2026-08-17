@@ -6,12 +6,9 @@ import "@awesome.me/webawesome/dist/components/icon/icon.js";
 import "@awesome.me/webawesome/dist/components/progress-bar/progress-bar.js";
 import "@awesome.me/webawesome/dist/components/animation/animation.js";
 import "@awesome.me/webawesome/dist/components/dialog/dialog.js";
-
-const storageKey = "trip-list-checked-v2";
-const completedVisibilityKey = "trip-list-show-completed-v1";
-const viewStorageKey = "trip-list-current-view-v1";
-const sectionStorageKey = "trip-list-current-section-v1";
-const badgePromptKey = "trip-list-badge-prompt-v1";
+import { loadCheckedIds, loadCurrentSection, loadCurrentView, loadShowCompleted, saveCheckedIds, saveNavigation, saveShowCompleted } from "./src/storage.js";
+import { checklistItem, escapeHtml, slugify, undoItem } from "./src/ui.js";
+import { initPwa } from "./src/pwa.js";
 const colorScheme = window.matchMedia("(prefers-color-scheme: dark)");
 const listDefinition = JSON.parse(document.querySelector("#list-definition").textContent);
 const checkedIds = loadCheckedIds();
@@ -35,16 +32,13 @@ let sections = listDefinition.map((section) => ({
 }));
 
 let currentView = loadCurrentView();
-let activeSectionId = loadCurrentSection();
+let activeSectionId = loadCurrentSection(sections);
 let showCompleted = loadShowCompleted();
 let searchTerm = "";
 const undoTargets = new Map();
 const undoTimers = new Map();
 const scrollPositions = new Map();
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-let deferredInstallPrompt = null;
-let activeServiceWorkerRegistration = null;
-let isReloadingForUpdate = false;
 
 const refs = {
   checklist: document.querySelector("#checklist"),
@@ -81,49 +75,19 @@ const refs = {
   quickSectionToggle: document.querySelector("#quick-section-toggle")
 };
 
-function loadCheckedIds() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(storageKey));
-    return new Set(Array.isArray(saved) ? saved : []);
-  } catch {
-    return new Set();
-  }
+function activeSection() {
+  return sections.find((section) => section.id === activeSectionId) ?? sections[0];
 }
 
-function loadShowCompleted() {
-  try {
-    const saved = localStorage.getItem(completedVisibilityKey);
-    return saved === null ? true : saved === "true";
-  } catch {
-    return true;
-  }
+function totals() {
+  const items = sections.flatMap((section) => section.items);
+  const done = items.filter((item) => item.done).length;
+  return { total: items.length, done, pending: items.length - done };
 }
 
-function saveShowCompleted() {
-  localStorage.setItem(completedVisibilityKey, String(showCompleted));
-}
-
-function loadCurrentView() {
-  try {
-    const saved = localStorage.getItem(viewStorageKey);
-    return ["overview", "pending", "categories", "category"].includes(saved) ? saved : "overview";
-  } catch {
-    return "overview";
-  }
-}
-
-function loadCurrentSection() {
-  try {
-    const saved = localStorage.getItem(sectionStorageKey);
-    return sections.some((section) => section.id === saved) ? saved : sections[0]?.id;
-  } catch {
-    return sections[0]?.id;
-  }
-}
-
-function saveNavigation() {
-  localStorage.setItem(viewStorageKey, currentView);
-  if (activeSectionId) localStorage.setItem(sectionStorageKey, activeSectionId);
+function sectionProgress(section) {
+  const done = section.items.filter((item) => item.done).length;
+  return { done, total: section.items.length, pending: section.items.length - done };
 }
 
 function setUndoTarget(sectionId, itemId) {
@@ -148,71 +112,6 @@ function clearUndoTargets() {
   undoTargets.clear();
 }
 
-function saveCheckedIds() {
-  const checked = sections.flatMap((section) => section.items).filter((item) => item.done).map((item) => item.id);
-  localStorage.setItem(storageKey, JSON.stringify(checked));
-}
-
-function updateConnectionStatus() {
-  const online = navigator.onLine;
-  refs.connectionStatus.classList.toggle("is-offline", !online);
-  refs.connectionStatus.querySelector("span:last-child").textContent = online ? "Con conexión" : "Sin conexión · guardado local";
-}
-
-function isInstalledApp() {
-  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
-}
-
-function canUseBadge() {
-  return isInstalledApp() && "setAppBadge" in navigator && "Notification" in window;
-}
-
-function updateAppBadge(pending) {
-  if (!canUseBadge() || Notification.permission !== "granted") return;
-  const update = pending > 0 ? navigator.setAppBadge?.(pending) : navigator.clearAppBadge?.();
-  update?.catch(() => {});
-}
-
-function updateBadgeDialog() {
-  const denied = "Notification" in window && Notification.permission === "denied";
-  refs.badgeDialogMessage.textContent = denied
-    ? "Las notificaciones están bloqueadas. Actívalas en Ajustes > Notificaciones > TripList para mostrar los globos."
-    : "TripList puede mostrar en su icono cuántas cosas quedan pendientes.";
-  refs.requestBadge.hidden = denied;
-}
-
-function maybePromptForBadgePermission() {
-  if (!canUseBadge() || Notification.permission === "granted" || sessionStorage.getItem(badgePromptKey)) return;
-  sessionStorage.setItem(badgePromptKey, "shown");
-  window.setTimeout(() => {
-    updateBadgeDialog();
-    refs.badgeDialog.open = true;
-  }, 500);
-}
-
-function activeSection() {
-  return sections.find((section) => section.id === activeSectionId) ?? sections[0];
-}
-
-function slugify(value) {
-  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-}
-
-function escapeHtml(value) {
-  return value.replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
-}
-
-function totals() {
-  const items = sections.flatMap((section) => section.items);
-  const done = items.filter((item) => item.done).length;
-  return { total: items.length, done, pending: items.length - done };
-}
-
-function sectionProgress(section) {
-  const done = section.items.filter((item) => item.done).length;
-  return { done, total: section.items.length, pending: section.items.length - done };
-}
-
 function navigationKey() {
   return currentView === "category" ? `category:${activeSectionId}` : currentView;
 }
@@ -229,7 +128,7 @@ function restoreScrollPosition() {
 function setView(view) {
   saveScrollPosition();
   currentView = view;
-  saveNavigation();
+  saveNavigation(currentView, activeSectionId);
   const updateView = () => {
     document.querySelectorAll(".view-tab").forEach((tab) => {
       const active = tab.dataset.view === view || (view === "category" && tab.dataset.view === "categories");
@@ -278,10 +177,6 @@ function updateQuickActions() {
   }
 }
 
-function tactileFeedback(duration = 8) {
-  if (!reducedMotion.matches && typeof navigator.vibrate === "function") navigator.vibrate(duration);
-}
-
 function renderOverview() {
   const visibleSections = showCompleted ? sections : sections.filter((section) => section.items.some((item) => !item.done));
   refs.overviewGrid.innerHTML = visibleSections.length ? visibleSections.map((section) => {
@@ -325,13 +220,6 @@ function renderPending() {
     : `<div class="empty-state"><span class="empty-symbol">✓</span><strong>${searchTerm ? "No hemos encontrado nada" : "No quedan pendientes"}</strong><p>${searchTerm ? "Prueba con otra palabra." : "La lista está completa. Buen viaje."}</p></div>`;
 }
 
-function checklistItem(item) {
-  return `<li class="check-item ${item.done ? "is-done" : ""}"><wa-checkbox data-item="${item.id}" ${item.done ? "checked" : ""}>${escapeHtml(item.label)}</wa-checkbox></li>`;
-}
-
-function undoItem(itemId) {
-  return `<li class="undo-item"><wa-animation name="fadeIn" duration="220" easing="cubic-bezier(.16, 1, .3, 1)" fill="both" play><span class="undo-symbol" aria-hidden="true">✓</span></wa-animation><span class="undo-copy"><strong>Producto marcado</strong><small>Se ha ocultado de la lista</small></span><button type="button" data-undo="${itemId}">Deshacer</button></li>`;
-}
 
 function renderCategory() {
   const section = activeSection();
@@ -408,7 +296,7 @@ document.addEventListener("click", (event) => {
     const section = sections.find((entry) => entry.items.some((entryItem) => entryItem.id === undoButton.dataset.undo));
     if (item) {
       item.done = false;
-      saveCheckedIds();
+      saveCheckedIds(sections);
     }
     removeUndoTarget(undoButton.dataset.undo, false);
     if (item && section) updateVisibleItem(item, section);
@@ -432,7 +320,7 @@ function toggleItem(checkbox) {
   item.done = checkbox.checked;
   if (item.done && !showCompleted && section) setUndoTarget(section.id, item.id);
   if (!item.done) removeUndoTarget(item.id, false);
-  saveCheckedIds();
+  saveCheckedIds(sections);
   tactileFeedback(item.done ? 8 : 5);
   updateVisibleItem(item, section);
 }
@@ -440,7 +328,7 @@ function toggleItem(checkbox) {
 function toggleCompletedVisibility() {
   showCompleted = !showCompleted;
   clearUndoTargets();
-  saveShowCompleted();
+  saveShowCompleted(showCompleted);
   render();
 }
 
@@ -452,7 +340,7 @@ refs.sectionToggle.addEventListener("click", () => {
   if (!section) return;
   const allDone = section.items.length > 0 && section.items.every((item) => item.done);
   section.items.forEach((item) => { item.done = !allDone; });
-  saveCheckedIds();
+  saveCheckedIds(sections);
   tactileFeedback(12);
   render();
 });
@@ -477,89 +365,17 @@ refs.cancelReset.addEventListener("click", () => {
   refs.resetDialog.open = false;
 });
 
-function showInstallButton(label = "Instalar") {
-  refs.installButton.textContent = label;
-  refs.installButton.hidden = false;
-}
-
-window.addEventListener("beforeinstallprompt", (event) => {
-  event.preventDefault();
-  deferredInstallPrompt = event;
-  showInstallButton();
-});
-
-refs.installButton.addEventListener("click", async () => {
-  if (!deferredInstallPrompt) {
-    refs.installDialog.open = true;
-    return;
-  }
-  deferredInstallPrompt.prompt();
-  await deferredInstallPrompt.userChoice;
-  deferredInstallPrompt = null;
-  refs.installButton.hidden = true;
-});
-
-refs.closeInstall.addEventListener("click", () => {
-  refs.installDialog.open = false;
-});
-
-refs.closeBadge.addEventListener("click", () => {
-  refs.badgeDialog.open = false;
-});
-
-refs.requestBadge.addEventListener("click", async () => {
-  const permission = await Notification.requestPermission();
-  updateBadgeDialog();
-  if (permission === "granted") {
-    updateAppBadge(totals().pending);
-    refs.badgeDialog.open = false;
-  }
-});
-
-function showUpdateBanner(registration) {
-  activeServiceWorkerRegistration = registration;
-  refs.updateBanner.hidden = false;
-}
-
-refs.reloadButton.addEventListener("click", () => {
-  const waitingWorker = activeServiceWorkerRegistration?.waiting;
-  if (!waitingWorker) return window.location.reload();
-  isReloadingForUpdate = true;
-  waitingWorker.postMessage({ type: "SKIP_WAITING" });
-});
-
-window.addEventListener("appinstalled", () => {
-  deferredInstallPrompt = null;
-  refs.installButton.hidden = true;
-});
-
-if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !window.navigator.standalone) showInstallButton("Cómo instalar");
-
 refs.confirmReset.addEventListener("click", () => {
   refs.resetDialog.open = false;
   sections.forEach((section) => section.items.forEach((item) => { item.done = false; }));
-  saveCheckedIds();
+  saveCheckedIds(sections);
   render();
 });
 
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (isReloadingForUpdate) window.location.reload();
-  });
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").then((registration) => {
-      if (registration.waiting && navigator.serviceWorker.controller) showUpdateBanner(registration);
-      registration.addEventListener("updatefound", () => {
-        const installingWorker = registration.installing;
-        installingWorker?.addEventListener("statechange", () => {
-          if (installingWorker.state === "installed" && navigator.serviceWorker.controller) showUpdateBanner(registration);
-        });
-      });
-    });
-  });
-}
-window.addEventListener("online", updateConnectionStatus);
-window.addEventListener("offline", updateConnectionStatus);
-updateConnectionStatus();
+const { updateAppBadge, tactileFeedback } = initPwa({
+  refs,
+  getPending: () => totals().pending,
+  reducedMotion
+});
+
 setView(currentView);
-maybePromptForBadgePermission();
