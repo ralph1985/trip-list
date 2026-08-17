@@ -62,6 +62,7 @@ const refs = {
   cancelReset: document.querySelector("#cancel-reset"),
   confirmReset: document.querySelector("#confirm-reset"),
   connectionStatus: document.querySelector("#connection-status"),
+  storageWarning: document.querySelector("#storage-warning"),
   installButton: document.querySelector("#install-button"),
   installDialog: document.querySelector("#install-dialog"),
   closeInstall: document.querySelector("#close-install"),
@@ -74,6 +75,14 @@ const refs = {
   quickActions: document.querySelector("#quick-actions"),
   quickSectionToggle: document.querySelector("#quick-section-toggle")
 };
+
+window.addEventListener("trip-list-storage-unavailable", () => {
+  refs.storageWarning.hidden = false;
+});
+
+window.addEventListener("trip-list-storage-available", () => {
+  refs.storageWarning.hidden = true;
+});
 
 function activeSection() {
   return sections.find((section) => section.id === activeSectionId) ?? sections[0];

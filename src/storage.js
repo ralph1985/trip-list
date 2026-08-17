@@ -9,8 +9,9 @@ export const storageKeys = {
 function saveValue(key, value) {
   try {
     localStorage.setItem(key, value);
+    window.dispatchEvent(new CustomEvent("trip-list-storage-available"));
   } catch {
-    // Algunos navegadores bloquean el almacenamiento o agotan su cuota.
+    window.dispatchEvent(new CustomEvent("trip-list-storage-unavailable"));
   }
 }
 
