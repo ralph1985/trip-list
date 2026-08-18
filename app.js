@@ -9,9 +9,10 @@ import "@awesome.me/webawesome/dist/components/dialog/dialog.js";
 import { loadCheckedIds, loadCurrentSection, loadCurrentView, loadShowCompleted, saveCheckedIds, saveNavigation, saveShowCompleted } from "./src/storage.js";
 import { checklistItem, escapeHtml, slugify, undoItem } from "./src/ui.js";
 import { initPwa } from "./src/pwa.js";
+import { createPeerSync } from "./src/peer-sync.js";
 const colorScheme = window.matchMedia("(prefers-color-scheme: dark)");
 const listDefinition = JSON.parse(document.querySelector("#list-definition").textContent);
-const checkedIds = loadCheckedIds();
+const initialCheckedIds = loadCheckedIds();
 
 function syncColorScheme() {
   document.documentElement.classList.toggle("wa-dark", colorScheme.matches);
@@ -27,7 +28,7 @@ let sections = listDefinition.map((section) => ({
   items: section.items.map((label) => ({
     id: `${slugify(section.name)}-${slugify(label)}`,
     label,
-    done: checkedIds.has(`${slugify(section.name)}-${slugify(label)}`)
+    done: initialCheckedIds.has(`${slugify(section.name)}-${slugify(label)}`)
   }))
 }));
 
@@ -73,7 +74,25 @@ const refs = {
   updateBanner: document.querySelector("#update-banner"),
   reloadButton: document.querySelector("#reload-button"),
   quickActions: document.querySelector("#quick-actions"),
-  quickSectionToggle: document.querySelector("#quick-section-toggle")
+  quickSectionToggle: document.querySelector("#quick-section-toggle"),
+  syncButton: document.querySelector("#sync-button"),
+  syncDialog: document.querySelector("#sync-dialog"),
+  closeSync: document.querySelector("#close-sync"),
+  syncStatus: document.querySelector("#sync-status"),
+  syncStart: document.querySelector("#sync-start"),
+  syncCreateOffer: document.querySelector("#sync-create-offer"),
+  syncUseOffer: document.querySelector("#sync-use-offer"),
+  syncOfferStep: document.querySelector("#sync-offer-step"),
+  syncOfferOutput: document.querySelector("#sync-offer-output"),
+  syncCopyOffer: document.querySelector("#sync-copy-offer"),
+  syncAnswerInput: document.querySelector("#sync-answer-input"),
+  syncAcceptAnswer: document.querySelector("#sync-accept-answer"),
+  syncAnswerStep: document.querySelector("#sync-answer-step"),
+  syncOfferInput: document.querySelector("#sync-offer-input"),
+  syncAcceptOffer: document.querySelector("#sync-accept-offer"),
+  syncAnswerOutputWrap: document.querySelector("#sync-answer-output-wrap"),
+  syncAnswerOutput: document.querySelector("#sync-answer-output"),
+  syncCopyAnswer: document.querySelector("#sync-copy-answer")
 };
 
 window.addEventListener("trip-list-storage-unavailable", () => {
@@ -92,6 +111,18 @@ function totals() {
   const items = sections.flatMap((section) => section.items);
   const done = items.filter((item) => item.done).length;
   return { total: items.length, done, pending: items.length - done };
+}
+
+function currentCheckedIds() {
+  return sections.flatMap((section) => section.items).filter((item) => item.done).map((item) => item.id);
+}
+
+function applySyncedIds(receivedIds) {
+  const mergedIds = new Set([...currentCheckedIds(), ...receivedIds]);
+  sections.forEach((section) => section.items.forEach((item) => { item.done = mergedIds.has(item.id); }));
+  clearUndoTargets();
+  saveCheckedIds(sections);
+  render();
 }
 
 function sectionProgress(section) {
@@ -379,6 +410,105 @@ refs.confirmReset.addEventListener("click", () => {
   sections.forEach((section) => section.items.forEach((item) => { item.done = false; }));
   saveCheckedIds(sections);
   render();
+});
+
+const peerSync = createPeerSync({
+  onStatus: (status) => {
+    const messages = {
+      gathering: "Preparando el código…",
+      waiting: "Código listo. Completa el intercambio.",
+      connecting: "Conectando directamente…",
+      connected: "Conexión directa establecida. Sincronizando…",
+      closed: "Conexión cerrada.",
+      error: "No se ha podido conectar. Prueba con ambos dispositivos en la misma Wi‑Fi."
+    };
+    refs.syncStatus.textContent = messages[status] ?? "";
+    refs.syncStatus.classList.toggle("is-error", status === "error");
+    if (status === "connected") {
+      try {
+        peerSync.send(currentCheckedIds());
+        refs.syncStatus.textContent = "Sincronización completada. Puedes cerrar esta ventana.";
+      } catch {
+        refs.syncStatus.textContent = "La conexión se abrió, pero no se pudo enviar el estado.";
+      }
+    }
+  },
+  onMessage: (receivedIds) => {
+    applySyncedIds(receivedIds);
+    refs.syncStatus.textContent = "Sincronización completada. Se han conservado las marcas de ambos dispositivos.";
+  }
+});
+
+function resetSyncDialog() {
+  peerSync.close();
+  refs.syncStart.hidden = false;
+  refs.syncOfferStep.hidden = true;
+  refs.syncAnswerStep.hidden = true;
+  refs.syncAnswerOutputWrap.hidden = true;
+  refs.syncStatus.textContent = "";
+  refs.syncStatus.classList.remove("is-error");
+  refs.syncOfferOutput.value = "";
+  refs.syncAnswerInput.value = "";
+  refs.syncOfferInput.value = "";
+  refs.syncAnswerOutput.value = "";
+}
+
+async function copySyncCode(textarea, button) {
+  try {
+    await navigator.clipboard.writeText(textarea.value);
+    const original = button.textContent;
+    button.textContent = "Copiado";
+    window.setTimeout(() => { button.textContent = original; }, 1400);
+  } catch {
+    textarea.focus();
+    textarea.select();
+  }
+}
+
+refs.syncButton.addEventListener("click", () => {
+  resetSyncDialog();
+  refs.syncDialog.open = true;
+});
+refs.closeSync.addEventListener("click", () => {
+  refs.syncDialog.open = false;
+  peerSync.close();
+});
+refs.syncDialog.addEventListener("wa-hide", () => peerSync.close());
+refs.syncCreateOffer.addEventListener("click", async () => {
+  try {
+    refs.syncStart.hidden = true;
+    refs.syncOfferStep.hidden = false;
+    refs.syncOfferOutput.value = await peerSync.createOffer();
+    refs.syncOfferOutput.focus();
+  } catch (error) {
+    refs.syncStatus.textContent = error.message;
+    refs.syncStatus.classList.add("is-error");
+  }
+});
+refs.syncUseOffer.addEventListener("click", () => {
+  refs.syncStart.hidden = true;
+  refs.syncAnswerStep.hidden = false;
+  refs.syncOfferInput.focus();
+});
+refs.syncCopyOffer.addEventListener("click", () => copySyncCode(refs.syncOfferOutput, refs.syncCopyOffer));
+refs.syncCopyAnswer.addEventListener("click", () => copySyncCode(refs.syncAnswerOutput, refs.syncCopyAnswer));
+refs.syncAcceptAnswer.addEventListener("click", async () => {
+  try {
+    await peerSync.acceptAnswer(refs.syncAnswerInput.value.trim());
+  } catch (error) {
+    refs.syncStatus.textContent = error.message;
+    refs.syncStatus.classList.add("is-error");
+  }
+});
+refs.syncAcceptOffer.addEventListener("click", async () => {
+  try {
+    refs.syncAnswerOutput.value = await peerSync.acceptOffer(refs.syncOfferInput.value.trim());
+    refs.syncAnswerOutputWrap.hidden = false;
+    refs.syncAnswerOutput.focus();
+  } catch (error) {
+    refs.syncStatus.textContent = error.message;
+    refs.syncStatus.classList.add("is-error");
+  }
 });
 
 const { updateAppBadge, tactileFeedback } = initPwa({

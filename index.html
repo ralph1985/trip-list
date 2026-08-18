@@ -21,6 +21,7 @@
         </div>
         <div class="header-actions">
           <wa-button id="install-button" appearance="plain" variant="brand" size="s" hidden>Instalar</wa-button>
+          <wa-button id="sync-button" appearance="plain" variant="brand" size="s">Sincronizar</wa-button>
           <wa-button id="reset-button" appearance="plain" circle size="m" title="Desmarcar toda la lista" aria-label="Desmarcar toda la lista">
             <wa-icon name="rotate-left" label="Desmarcar toda la lista"></wa-icon>
           </wa-button>
@@ -130,6 +131,35 @@
       </div>
       <wa-button slot="footer" id="close-badge" appearance="plain">Ahora no</wa-button>
       <wa-button slot="footer" id="request-badge" variant="brand">Permitir globos</wa-button>
+    </wa-dialog>
+    <wa-dialog id="sync-dialog" label="Sincronizar con otro dispositivo" light-dismiss>
+      <div class="sync-copy">
+        <p id="sync-intro">Conecta este navegador con otro sin cuentas ni servidor. Tendrás que copiar un código de ida y otro de vuelta.</p>
+        <p id="sync-status" class="sync-status" role="status"></p>
+        <div id="sync-start" class="sync-step">
+          <wa-button id="sync-create-offer" variant="brand">Crear código de conexión</wa-button>
+          <wa-button id="sync-use-offer" appearance="outlined">Tengo un código</wa-button>
+        </div>
+        <div id="sync-offer-step" class="sync-step" hidden>
+          <label for="sync-offer-output">Código para el otro dispositivo</label>
+          <textarea id="sync-offer-output" readonly rows="5" spellcheck="false"></textarea>
+          <wa-button id="sync-copy-offer" appearance="outlined" size="s">Copiar código</wa-button>
+          <label for="sync-answer-input">Pega aquí la respuesta del otro dispositivo</label>
+          <textarea id="sync-answer-input" rows="5" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+          <wa-button id="sync-accept-answer" variant="brand">Conectar</wa-button>
+        </div>
+        <div id="sync-answer-step" class="sync-step" hidden>
+          <label for="sync-offer-input">Pega aquí el código del primer dispositivo</label>
+          <textarea id="sync-offer-input" rows="5" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+          <wa-button id="sync-accept-offer" variant="brand">Generar respuesta</wa-button>
+          <div id="sync-answer-output-wrap" hidden>
+            <label for="sync-answer-output">Código de respuesta para el primer dispositivo</label>
+            <textarea id="sync-answer-output" readonly rows="5" spellcheck="false"></textarea>
+            <wa-button id="sync-copy-answer" appearance="outlined" size="s">Copiar respuesta</wa-button>
+          </div>
+        </div>
+      </div>
+      <wa-button slot="footer" id="close-sync" appearance="plain">Cerrar</wa-button>
     </wa-dialog>
     <nav class="mobile-nav" aria-label="Navegación principal">
       <button class="view-tab is-active" type="button" data-view="overview"><wa-icon name="table-cells-large" label="Resumen"></wa-icon><span>Resumen</span></button>
