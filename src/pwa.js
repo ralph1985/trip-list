@@ -8,7 +8,7 @@ function canUseBadge() {
   return isInstalledApp() && "setAppBadge" in navigator && "Notification" in window;
 }
 
-export function initPwa({ refs, getPending, reducedMotion }) {
+export function initPwa({ refs, getBadgeState, reducedMotion }) {
   let deferredInstallPrompt = null;
   let activeServiceWorkerRegistration = null;
   let isReloadingForUpdate = false;
@@ -19,9 +19,9 @@ export function initPwa({ refs, getPending, reducedMotion }) {
     refs.connectionStatus.querySelector("span:last-child").textContent = online ? "Con conexión" : "Sin conexión · guardado local";
   }
 
-  function updateAppBadge(pending) {
+  function updateAppBadge({ done, pending }) {
     if (!canUseBadge() || Notification.permission !== "granted") return;
-    const update = pending > 0 ? navigator.setAppBadge?.(pending) : navigator.clearAppBadge?.();
+    const update = done > 0 && pending > 0 ? navigator.setAppBadge?.(pending) : navigator.clearAppBadge?.();
     update?.catch(() => {});
   }
 
@@ -51,7 +51,7 @@ export function initPwa({ refs, getPending, reducedMotion }) {
     const permission = await Notification.requestPermission();
     updateBadgeDialog();
     if (permission === "granted") {
-      updateAppBadge(getPending());
+      updateAppBadge(getBadgeState());
       refs.badgeDialog.open = false;
     }
   });

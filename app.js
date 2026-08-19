@@ -204,7 +204,7 @@ function updateProgress() {
   refs.progressMessage.textContent = pending === 0 ? "Todo preparado para salir." : `${pending} ${pending === 1 ? "cosa pendiente" : "cosas pendientes"} para revisar.`;
   refs.overviewStatus.textContent = pending === 0 ? "Lista completa" : `${pending} pendientes`;
   refs.pendingStatus.textContent = searchTerm ? "Filtrando resultados" : `${pending} por revisar`;
-  updateAppBadge(pending);
+  updateAppBadge({ done, pending });
 }
 
 function updateQuickActions() {
@@ -513,7 +513,10 @@ refs.syncAcceptOffer.addEventListener("click", async () => {
 
 const { updateAppBadge, tactileFeedback } = initPwa({
   refs,
-  getPending: () => totals().pending,
+  getBadgeState: () => {
+    const { done, pending } = totals();
+    return { done, pending };
+  },
   reducedMotion
 });
 
