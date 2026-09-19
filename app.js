@@ -219,7 +219,11 @@ function updateQuickActions() {
 
 function renderOverview() {
   const visibleSections = showCompleted ? sections : sections.filter((section) => section.items.some((item) => !item.done));
-  refs.overviewGrid.innerHTML = visibleSections.length ? visibleSections.map((section) => {
+  const orderedSections = [
+    ...visibleSections.filter((section) => section.items.some((item) => !item.done)),
+    ...visibleSections.filter((section) => section.items.every((item) => item.done))
+  ];
+  refs.overviewGrid.innerHTML = orderedSections.length ? orderedSections.map((section) => {
     const progress = sectionProgress(section);
     const state = progress.pending === 0 ? "complete" : progress.done > 0 ? "started" : "fresh";
     const originalIndex = sections.indexOf(section);
