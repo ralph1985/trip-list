@@ -100,9 +100,14 @@ h2 { margin-bottom: 0; font-size: clamp(1.7rem, 4vw, 2.25rem); letter-spacing: -
 .search-box input { padding: 14px 0; border: 0; color: var(--ink); background: transparent; outline: none; }
 .search-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .clear-search { border: 0; color: var(--accent); background: transparent; font-size: .75rem; font-weight: 700; white-space: nowrap; }
-.pending-list { display: grid; gap: 30px; }
+.pending-list { display: grid; gap: 34px; }
+.pending-status-group { display: grid; gap: 16px; }
+.pending-status-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.pending-status-heading h3 { margin: 0; font-size: 1.05rem; letter-spacing: -.03em; }
+.pending-status-heading span { color: var(--muted); font-size: .75rem; }
+.pending-status-group.is-completed .pending-status-heading h3 { color: var(--muted); }
 .pending-group-heading { position: sticky; top: 58px; z-index: 5; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 9px; padding: 9px 0 8px; background: var(--background); box-shadow: 0 8px 14px -16px var(--ink); }
-.pending-group-heading h3 { margin: 0; font-size: .95rem; letter-spacing: -.02em; }
+.pending-group-heading h4 { margin: 0; font-size: .95rem; letter-spacing: -.02em; }
 .pending-group-heading button, .back-link { padding: 0; border: 0; color: var(--accent); background: transparent; font-size: .76rem; font-weight: 700; }
 .checklist { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
 .check-item { display: flex; align-items: center; min-height: 56px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 11px; background: var(--paper); transition: background .2s, border-color .2s, transform .2s; }

@@ -246,17 +246,19 @@ function renderCategories() {
 
 function renderPending() {
   const normalizedSearch = searchTerm.trim().toLocaleLowerCase();
-  const groups = sections.map((section) => ({
+  const matchesSearch = (section, item) => !normalizedSearch || item.label.toLocaleLowerCase().includes(normalizedSearch) || section.name.toLocaleLowerCase().includes(normalizedSearch);
+  const groupsFor = (isVisible) => sections.map((section) => ({
     section,
-    items: section.items.filter((item) => {
-      const isUndoTarget = undoTargets.has(item.id);
-      return ((!item.done || showCompleted) || (!showCompleted && isUndoTarget)) && (!normalizedSearch || item.label.toLocaleLowerCase().includes(normalizedSearch) || section.name.toLocaleLowerCase().includes(normalizedSearch));
-    })
+    items: section.items.filter((item) => isVisible(item) && matchesSearch(section, item))
   })).filter(({ items }) => items.length);
+  const pendingGroups = groupsFor((item) => !item.done || undoTargets.has(item.id));
+  const completedGroups = showCompleted ? groupsFor((item) => item.done && !undoTargets.has(item.id)) : [];
+  const renderGroups = (groups) => groups.map(({ section, items }) => `<section class="pending-group"><div class="pending-group-heading"><h4>${escapeHtml(section.name)}</h4><button type="button" data-open-section="${section.id}">Ver sección →</button></div><ul class="checklist">${items.map((item) => undoTargets.has(item.id) ? undoItem(item.id) : checklistItem(item)).join("")}</ul></section>`).join("");
+  const renderStatusGroup = (label, groups, modifier) => groups.length ? `<section class="pending-status-group ${modifier}"><div class="pending-status-heading"><h3>${label}</h3><span>${groups.reduce((count, group) => count + group.items.length, 0)} ${groups.reduce((count, group) => count + group.items.length, 0) === 1 ? "elemento" : "elementos"}</span></div>${renderGroups(groups)}</section>` : "";
 
   refs.clearSearch.hidden = !searchTerm;
-  refs.pendingList.innerHTML = groups.length
-    ? groups.map(({ section, items }) => `<section class="pending-group"><div class="pending-group-heading"><h3>${escapeHtml(section.name)}</h3><button type="button" data-open-section="${section.id}">Ver sección →</button></div><ul class="checklist">${items.map((item) => undoTargets.has(item.id) ? undoItem(item.id) : checklistItem(item)).join("")}</ul></section>`).join("")
+  refs.pendingList.innerHTML = pendingGroups.length || completedGroups.length
+    ? `${renderStatusGroup("Pendientes", pendingGroups, "is-pending")}${renderStatusGroup("No pendientes", completedGroups, "is-completed")}`
     : `<div class="empty-state"><span class="empty-symbol">✓</span><strong>${searchTerm ? "No hemos encontrado nada" : "No quedan pendientes"}</strong><p>${searchTerm ? "Prueba con otra palabra." : "La lista está completa. Buen viaje."}</p></div>`;
 }
 
@@ -304,8 +306,11 @@ function updateSectionSummary(section) {
 function updateVisibleItem(item, section) {
   updateSectionSummary(section);
   updateProgress();
+  if (currentView === "pending") {
+    renderPending();
+    return;
+  }
   const containers = [];
-  if (currentView === "pending") containers.push(refs.pendingList);
   if (currentView === "category" && activeSectionId === section.id) containers.push(refs.checklist);
   containers.forEach((container) => {
     const checkbox = container.querySelector(`[data-item="${item.id}"]`);
