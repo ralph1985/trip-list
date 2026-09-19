@@ -217,12 +217,16 @@ function updateQuickActions() {
   }
 }
 
-function renderOverview() {
-  const visibleSections = showCompleted ? sections : sections.filter((section) => section.items.some((item) => !item.done));
-  const orderedSections = [
+function orderSectionsWithCompletedLast(visibleSections) {
+  return [
     ...visibleSections.filter((section) => section.items.some((item) => !item.done)),
     ...visibleSections.filter((section) => section.items.every((item) => item.done))
   ];
+}
+
+function renderOverview() {
+  const visibleSections = showCompleted ? sections : sections.filter((section) => section.items.some((item) => !item.done));
+  const orderedSections = orderSectionsWithCompletedLast(visibleSections);
   refs.overviewGrid.innerHTML = orderedSections.length ? orderedSections.map((section) => {
     const progress = sectionProgress(section);
     const state = progress.pending === 0 ? "complete" : progress.done > 0 ? "started" : "fresh";
@@ -238,7 +242,8 @@ function renderOverview() {
 
 function renderCategories() {
   const visibleSections = showCompleted ? sections : sections.filter((section) => section.items.some((item) => !item.done));
-  refs.categoriesList.innerHTML = visibleSections.length ? visibleSections.map((section) => {
+  const orderedSections = orderSectionsWithCompletedLast(visibleSections);
+  refs.categoriesList.innerHTML = orderedSections.length ? orderedSections.map((section) => {
     const progress = sectionProgress(section);
     return `<button class="category-row" type="button" data-open-section="${section.id}" data-section-summary="${section.id}">
       <span class="category-row-name">${escapeHtml(section.name)}</span>
